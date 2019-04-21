@@ -5,6 +5,7 @@ project (BakeryCanvas)
 # 查找BakeryCanvas目录下的所有源文件
 # 并将名称保存到 DIR_SRCS 变量
 aux_source_directory(BakeryCanvas DIR_SRCS)
+aux_source_directory(BakeryCanvas/internals DIR_SRCS)
 link_directories("${PROJECT_SOURCE_DIR}/BakeryCanvas/libs")
 # 指定生成目标
 add_executable(BakeryCanvas ${DIR_SRCS})
