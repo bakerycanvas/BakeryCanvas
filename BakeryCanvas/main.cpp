@@ -127,7 +127,7 @@ int main(int argc, char* argv[])
 	std::string result, exception;
 	//V8RunScript(v8_main_context, "gl.test()", result, exception);
 	//V8RunScript(v8_main_context, "gl.GL_COLOR_BUFFER_BIT", result, exception);
-	V8RunScript(v8_main_context, "gl.glClearColor(0.2, 0.3, 0.3, 1.0);\n gl.glClear(gl.GL_COLOR_BUFFER_BIT);", result, exception);
+	V8RunScript(v8_main_context, "gl.clearColor(0.2, 0.3, 0.3, 1.0);\n gl.clear(gl.GL_COLOR_BUFFER_BIT);", result, exception);
 	printf("result:%s\nexceptions:%s\n", result.c_str(), exception.c_str());
 	glfwMainLoop(win);
 	deInitGLFW();

@@ -13,12 +13,12 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="v8pp">
+      <UniqueIdentifier>{36fe961a-8154-424b-a553-8f99d85e3a42}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Bind_GL.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="GL.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp">
@@ -32,8 +32,62 @@
     <ClInclude Include="Bind_GL.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="GL.h">
-      <Filter>头文件</Filter>
+    <ClInclude Include="v8pp\call_from_v8.hpp">
+      <Filter>v8pp</Filter>
+    </ClInclude>
+    <ClInclude Include="v8pp\call_v8.hpp">
+      <Filter>v8pp</Filter>
+    </ClInclude>
+    <ClInclude Include="v8pp\class.hpp">
+      <Filter>v8pp</Filter>
+    </ClInclude>
+    <ClInclude Include="v8pp\class.ipp">
+      <Filter>v8pp</Filter>
+    </ClInclude>
+    <ClInclude Include="v8pp\config.hpp">
+      <Filter>v8pp</Filter>
+    </ClInclude>
+    <ClInclude Include="v8pp\context.hpp">
+      <Filter>v8pp</Filter>
+    </ClInclude>
+    <ClInclude Include="v8pp\convert.hpp">
+      <Filter>v8pp</Filter>
+    </ClInclude>
+    <ClInclude Include="v8pp\factory.hpp">
+      <Filter>v8pp</Filter>
+    </ClInclude>
+    <ClInclude Include="v8pp\function.hpp">
+      <Filter>v8pp</Filter>
+    </ClInclude>
+    <ClInclude Include="v8pp\json.hpp">
+      <Filter>v8pp</Filter>
+    </ClInclude>
+    <ClInclude Include="v8pp\json.ipp">
+      <Filter>v8pp</Filter>
+    </ClInclude>
+    <ClInclude Include="v8pp\module.hpp">
+      <Filter>v8pp</Filter>
+    </ClInclude>
+    <ClInclude Include="v8pp\object.hpp">
+      <Filter>v8pp</Filter>
+    </ClInclude>
+    <ClInclude Include="v8pp\persistent.hpp">
+      <Filter>v8pp</Filter>
+    </ClInclude>
+    <ClInclude Include="v8pp\property.hpp">
+      <Filter>v8pp</Filter>
+    </ClInclude>
+    <ClInclude Include="v8pp\ptr_traits.hpp">
+      <Filter>v8pp</Filter>
+    </ClInclude>
+    <ClInclude Include="v8pp\throw_ex.hpp">
+      <Filter>v8pp</Filter>
+    </ClInclude>
+    <ClInclude Include="v8pp\throw_ex.ipp">
+      <Filter>v8pp</Filter>
+    </ClInclude>
+    <ClInclude Include="v8pp\utility.hpp">
+      <Filter>v8pp</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

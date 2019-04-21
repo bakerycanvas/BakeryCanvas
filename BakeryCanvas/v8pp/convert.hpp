@@ -300,6 +300,13 @@ struct convert<T, typename std::enable_if<std::is_floating_point<T>::value>::typ
 	}
 };
 
+//see void* as intptr_t
+template<>
+struct convert<void*> : convert<intptr_t> {};
+
+template<>
+struct convert<const void*> : convert<intptr_t> {};
+
 // convert Array <-> std::array
 template<typename T, size_t N>
 struct convert<std::array<T, N>>

@@ -127,13 +127,30 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Bind_GL.cpp" />
-    <ClCompile Include="GL.cpp" />
     <ClCompile Include="glad.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Bind_GL.h" />
-    <ClInclude Include="GL.h" />
+    <ClInclude Include="v8pp\call_from_v8.hpp" />
+    <ClInclude Include="v8pp\call_v8.hpp" />
+    <ClInclude Include="v8pp\class.hpp" />
+    <ClInclude Include="v8pp\class.ipp" />
+    <ClInclude Include="v8pp\config.hpp" />
+    <ClInclude Include="v8pp\context.hpp" />
+    <ClInclude Include="v8pp\convert.hpp" />
+    <ClInclude Include="v8pp\factory.hpp" />
+    <ClInclude Include="v8pp\function.hpp" />
+    <ClInclude Include="v8pp\json.hpp" />
+    <ClInclude Include="v8pp\json.ipp" />
+    <ClInclude Include="v8pp\module.hpp" />
+    <ClInclude Include="v8pp\object.hpp" />
+    <ClInclude Include="v8pp\persistent.hpp" />
+    <ClInclude Include="v8pp\property.hpp" />
+    <ClInclude Include="v8pp\ptr_traits.hpp" />
+    <ClInclude Include="v8pp\throw_ex.hpp" />
+    <ClInclude Include="v8pp\throw_ex.ipp" />
+    <ClInclude Include="v8pp\utility.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
