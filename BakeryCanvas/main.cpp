@@ -119,6 +119,30 @@ int main(int argc, char* argv[])
 {
 	GLFWwindow *win = InitWindow();
 	//init V8, must be in main, or caused 9999+ kinds of crashes
+
+	std::string filename;
+	for (int i = 1; i < argc; i++) {
+		printf("%s", argv[i]);
+		if (i == 1) {
+			filename = argv[1];
+		}
+	}
+
+	std::string scriptText;
+	if (!filename.empty()) {
+		std::ifstream file;
+		file.open(filename);
+
+		if (!file) {
+			printf("file read error\n");
+			return 0;
+		}
+
+		std::ostringstream tmp;
+		tmp << file.rdbuf();
+		scriptText = tmp.str();
+	}
+
 	v8::V8::InitializeICUDefaultLocation(argv[0]);
 	v8::V8::InitializeExternalStartupData(argv[0]);
 	std::unique_ptr<v8::TracingController> tracing_controller = {};
@@ -137,7 +161,11 @@ int main(int argc, char* argv[])
 	std::string result, exception;
 	//V8RunScript(v8_main_context, "gl.test()", result, exception);
 	//V8RunScript(v8_main_context, "gl.GL_COLOR_BUFFER_BIT", result, exception);
-	V8RunScript(v8_main_context, "gl.clearColor(0.2, 0.3, 0.3, 1.0);\n gl.clear(gl.GL_COLOR_BUFFER_BIT);", result, exception);
+	if (scriptText.empty()) {
+		V8RunScript(v8_main_context, "gl.clearColor(0.2, 0.3, 0.3, 1.0);\n gl.clear(gl.GL_COLOR_BUFFER_BIT);", result, exception);
+	} else {
+		V8RunScript(v8_main_context, scriptText, result, exception);
+	}
 	printf("result:%s\nexceptions:%s\n", result.c_str(), exception.c_str());
 	glfwMainLoop(win);
 	deInitGLFW();
