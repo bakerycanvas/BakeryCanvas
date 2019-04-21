@@ -1,10 +1,10 @@
 #pragma once
 
+#include "v8pp/call_from_v8.hpp"
+#include "v8pp/call_v8.hpp"
+#include "v8pp/class.hpp"
 #include "v8pp/config.hpp"
 #include "v8pp/context.hpp"
-#include "v8pp/call_v8.hpp"
-#include "v8pp/call_from_v8.hpp"
-#include "v8pp/class.hpp"
 #include "v8pp/json.hpp"
 #include "v8pp/module.hpp"
 #include "v8pp/object.hpp"
@@ -15,4 +15,4 @@
 #include "internals/log.h"
 #include "internals/settimeout.h"
 
-void Bind_Internals(v8::Isolate * iso);
+void Bind_Internals(v8::Isolate* iso);

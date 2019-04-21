@@ -171,7 +171,7 @@ int main(int argc, char* argv[])
 	} else {
 		V8RunScript(v8_main_context, scriptText, result, exception);
 	}
-	printf("\n\n\nBakery Canvas closed\n\nresult:%s\nexceptions:%s\n", result.c_str(), exception.c_str());
+	printf("\n\n\nBakery Canvas running...\n\nresult:%s\nexceptions:%s\n", result.c_str(), exception.c_str());
 	glfwMainLoop(win);
 	deInitGLFW();
 	return 0;
