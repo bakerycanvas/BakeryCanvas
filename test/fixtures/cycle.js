@@ -4,8 +4,7 @@
  * 结果：显示胭脂红色画面
  */
 
-log('sfdsfssf');
-setTimeout(() => 'abc', 1111);
-
-gl.clearColor(0.8, 0.3, 0.3, 1.0);
-gl.clear(gl.GL_COLOR_BUFFER_BIT);
+setInterval(() => {
+  gl.clearColor(Math.random(), Math.random(), Math.random(), 1.0);
+  gl.clear(gl.GL_COLOR_BUFFER_BIT);
+}, 1000);

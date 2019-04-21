@@ -11,6 +11,7 @@
 #include "include/libplatform/libplatform.h"
 #include "include/v8.h"
 #include "Bind_GL.h"
+#include "internals/bind.h"
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
@@ -121,12 +122,15 @@ int main(int argc, char* argv[])
 	//init V8, must be in main, or caused 9999+ kinds of crashes
 
 	std::string filename;
+	printf("\n");
 	for (int i = 1; i < argc; i++) {
-		printf("%s", argv[i]);
+		printf("arg[%d]:%s\n", i, argv[i]);
 		if (i == 1) {
 			filename = argv[1];
 		}
 	}
+
+	printf("\n\n");
 
 	std::string scriptText;
 	if (!filename.empty()) {
@@ -157,6 +161,7 @@ int main(int argc, char* argv[])
 	v8::Local<v8::Context> v8_main_context = v8::Context::New(isolate);
 	v8::Context::Scope context_scope(v8_main_context);
 	Bind_GL(isolate);
+	Bind_Internals(isolate);
 
 	std::string result, exception;
 	//V8RunScript(v8_main_context, "gl.test()", result, exception);
@@ -166,7 +171,7 @@ int main(int argc, char* argv[])
 	} else {
 		V8RunScript(v8_main_context, scriptText, result, exception);
 	}
-	printf("result:%s\nexceptions:%s\n", result.c_str(), exception.c_str());
+	printf("\n\n\nBakery Canvas closed\n\nresult:%s\nexceptions:%s\n", result.c_str(), exception.c_str());
 	glfwMainLoop(win);
 	deInitGLFW();
 	return 0;
