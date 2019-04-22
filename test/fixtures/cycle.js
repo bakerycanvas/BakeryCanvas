@@ -11,7 +11,7 @@ let id = setInterval(() => {
   gl.clearColor(r, g, b, 1.0);
   gl.clear(gl.GL_COLOR_BUFFER_BIT);
   i++;
-  if (i > 2) {
-    clearInterval(i);
+  if (i > 5) {
+    clearInterval(id);
   }
 }, 1000);
