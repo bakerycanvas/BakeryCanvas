@@ -9,5 +9,5 @@
  */
 
 log('开始运行');
-setTimeout(x => log(x, "sfs", false, undefined, null, {}, [1, 2, 3]), 0);
+setTimeout(x => log(x, "sfs", false, undefined, null, {}, [1, 2, 3]), 1000);
 log('运行结束');

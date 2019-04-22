@@ -160,11 +160,11 @@ SpacesInAngles:	false
 # 在容器(ObjC和JavaScript的数组和字典等)字面量中添加空格
 SpacesInContainerLiterals:	true
 # 在C风格类型转换的括号中添加空格
-SpacesInCStyleCastParentheses:	true
+SpacesInCStyleCastParentheses:	false
 # 在圆括号的(后和)前添加空格
 SpacesInParentheses:	false
 # 在方括号的[后和]前添加空格，lamda表达式和未指明大小的数组的声明不受影响
-SpacesInSquareBrackets:	true
+SpacesInSquareBrackets:	false
 # 标准: Cpp03, Cpp11, Auto
 Standard:	Cpp11
 # tab宽度

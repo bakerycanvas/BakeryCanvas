@@ -51,3 +51,4 @@ _deps
 
 # Editors
 .vscode
+/build
