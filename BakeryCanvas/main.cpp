@@ -13,7 +13,7 @@
 #include <libplatform/libplatform.h>
 
 #include "Bind_GL.h"
-#include "internals/bind.h"
+#include "jsinternals/bind.h"
 #include "queue/queue.h"
 
 

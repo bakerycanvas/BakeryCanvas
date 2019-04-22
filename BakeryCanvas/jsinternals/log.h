@@ -12,7 +12,6 @@
 #include "v8pp/throw_ex.hpp"
 #include "v8pp/utility.hpp"
 
-#include "internals/log.h"
-#include "internals/settimeout.h"
-
-void Bind_Internals(v8::Isolate* iso);
+namespace BKJSInternals {
+  void log(const v8::FunctionCallbackInfo<v8::Value>& args);
+}

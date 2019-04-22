@@ -12,6 +12,7 @@
 #include "v8pp/throw_ex.hpp"
 #include "v8pp/utility.hpp"
 
-namespace bkinternals {
-  void log(const v8::FunctionCallbackInfo<v8::Value>& args);
-}
+#include "jsinternals/log.h"
+#include "jsinternals/settimeout.h"
+
+void Bind_Internals(v8::Isolate* iso);

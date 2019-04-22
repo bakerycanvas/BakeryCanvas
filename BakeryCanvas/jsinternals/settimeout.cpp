@@ -1,6 +1,6 @@
 #include "settimeout.h"
 
-namespace bkinternals {
+namespace BKJSInternals {
 
   // Data structure to store info of a timer
   struct TimerInfo {
@@ -90,4 +90,4 @@ namespace bkinternals {
       free(timerInfo);
     }
   }
-}  // namespace bkinternals
+}  // namespace BKJSInternals

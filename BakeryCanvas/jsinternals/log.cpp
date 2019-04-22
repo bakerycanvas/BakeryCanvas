@@ -1,6 +1,6 @@
 #include "log.h"
 
-namespace bkinternals {
+namespace BKJSInternals {
   const char* ToCString(const v8::String::Utf8Value& value) {
     return *value ? *value : "<string conversion failed>";
   }
@@ -14,4 +14,4 @@ namespace bkinternals {
     }
     printf("\n");
   };
-}  // namespace bkinternals
+}  // namespace BKJSInternals
