@@ -8,24 +8,21 @@
 #include <iostream>
 #include <sstream>
 #include <fstream>
-#include "include/libplatform/libplatform.h"
-#include "include/v8.h"
-#include "Bind_GL.h"
-#include "internals/bind.h"
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <libplatform/libplatform.h>
 
-#pragma comment(lib, "v8_monolith")
+#include "Bind_GL.h"
+#include "internals/bind.h"
+#include "queue/queue.h"
+
 
 #ifdef WIN32
+#pragma comment(lib, "v8_monolith")
 #pragma comment(lib, "glfw3dll")
 #pragma comment(lib, "dbghelp")
 #pragma comment(lib, "winmm")
 #pragma comment(lib, "shlwapi")
-#endif
-
-#ifdef __APPLE__
-#pragma comment(lib, "glfw.3")
 #endif
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
@@ -65,13 +62,14 @@ GLFWwindow* InitWindow(int width = 800, int height = 600, const char* title = "B
 	return window;
 }
 
-void glfwMainLoop(GLFWwindow *window)
+void mainLoop(GLFWwindow* window)
 {
 	while (!glfwWindowShouldClose(window))
 	{
 		glfwSwapBuffers(window);
 		glClear(GL_COLOR_BUFFER_BIT);
 		glfwPollEvents();
+		BKQueue::tick();
 	}
 }
 
@@ -163,73 +161,18 @@ int main(int argc, char* argv[])
 	Bind_GL(isolate);
 	Bind_Internals(isolate);
 
+	BKQueue::start();
+
 	std::string result, exception;
-	//V8RunScript(v8_main_context, "gl.test()", result, exception);
-	//V8RunScript(v8_main_context, "gl.GL_COLOR_BUFFER_BIT", result, exception);
 	if (scriptText.empty()) {
 		V8RunScript(v8_main_context, "gl.clearColor(0.2, 0.3, 0.3, 1.0);\n gl.clear(gl.GL_COLOR_BUFFER_BIT);", result, exception);
 	} else {
 		V8RunScript(v8_main_context, scriptText, result, exception);
 	}
 	printf("\n\n\nBakery Canvas running...\n\nresult:%s\nexceptions:%s\n", result.c_str(), exception.c_str());
-	glfwMainLoop(win);
-	deInitGLFW();
-	return 0;
-}
 
-/*
-int main(int argc, char* argv[]) {
-	// Initialize V8.
-	v8::V8::InitializeICUDefaultLocation(argv[0]);
-	v8::V8::InitializeExternalStartupData(argv[0]);
-	std::unique_ptr<v8::TracingController> tracing_controller = {};
-	std::unique_ptr<v8::Platform> platform = v8::platform::NewDefaultPlatform();
-	v8::V8::InitializePlatform(platform.get());
-	v8::V8::Initialize();
-	// Create a new Isolate and make it the current one.
-	v8::Isolate::CreateParams create_params;
-	create_params.array_buffer_allocator =
-		v8::ArrayBuffer::Allocator::NewDefaultAllocator();
-	v8::Isolate* isolate = v8::Isolate::New(create_params);
-	{
-		v8::Isolate::Scope isolate_scope(isolate);
-		//// Create a stack-allocated handle scope.
-		v8::HandleScope handle_scope(isolate);
-		//v8::Local<v8::ObjectTemplate> global = v8::ObjectTemplate::New(isolate);
-		//global->Set(
-		//	v8::String::NewFromUtf8(isolate, "print", v8::NewStringType::kNormal)
-		//	.ToLocalChecked(),
-		//	v8::FunctionTemplate::New(isolate, Print));
-		//// Create a new context.
-		v8::Local<v8::Context> context = v8::Context::New(isolate);
-		//v8::Local<v8::Context> context = isolate->GetCurrentContext();
-		//v8::Local<v8::Context> context = v8::Context::New(isolate, NULL, global);
-		// Enter the context for compiling and running the hello world script.
-		v8::Context::Scope context_scope(context);
-		//v8::Context::Scope context_scope(isolate->GetCurrentContext());
-		Bind_GL(isolate, context->Global());
-		// Create a string containing the JavaScript source code.
-		v8::Local<v8::String> source =
-			v8::String::NewFromUtf8(isolate, "gl.test()",
-				v8::NewStringType::kNormal)
-			.ToLocalChecked();
-		// Compile the source code.
-		v8::Local<v8::Script> script =
-			v8::Script::Compile(context, source).ToLocalChecked();
-		// Run the script to get the result.
-		script->Run(context);
-		//v8::Local<v8::Value> result = script->Run(context).ToLocalChecked();
-		// Convert the result to an UTF8 string and print it.
-		//v8::String::Utf8Value utf8(isolate, result);
-		//printf("%s\n", *utf8);
-	}
-	// Dispose the isolate and tear down V8.
-	isolate->Dispose();
-	v8::V8::Dispose();
-	v8::V8::ShutdownPlatform();
-	delete create_params.array_buffer_allocator;
+	mainLoop(win);
+	BKQueue::close();
 	deInitGLFW();
-	system("pause");
 	return 0;
 }
-*/
