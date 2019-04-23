@@ -6,6 +6,7 @@
 namespace BKQueue {
   int start();
   int tick();
+  void stop();
   int close();
   uv_timer_t* createTimer(uv_timer_cb callback, int time);
   void destoryTimer(uv_timer_t* timer);

@@ -30,6 +30,8 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 	glViewport(0, 0, width, height);
 }
 
+GLFWwindow* window;
+
 GLFWwindow* InitWindow(int width = 800, int height = 600, const char* title = "Bakery")
 {
 	glfwInit();
@@ -42,7 +44,7 @@ GLFWwindow* InitWindow(int width = 800, int height = 600, const char* title = "B
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); 
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
-	GLFWwindow* window = glfwCreateWindow(width, height, title, NULL, NULL);
+	window = glfwCreateWindow(width, height, title, NULL, NULL);
 	char *errorbuf;
 	auto error = glfwGetError((const char**)&errorbuf);
 	if (window == NULL)
@@ -62,14 +64,15 @@ GLFWwindow* InitWindow(int width = 800, int height = 600, const char* title = "B
 	return window;
 }
 
-void mainLoop(GLFWwindow* window)
+void mainLoop(uv_idle_t* handle)
 {
-	while (!glfwWindowShouldClose(window))
+	if (!glfwWindowShouldClose(window))
 	{
 		glfwSwapBuffers(window);
 		glClear(GL_COLOR_BUFFER_BIT);
 		glfwPollEvents();
-		BKQueue::tick();
+	} else {
+		BKQueue::stop();
 	}
 }
 
@@ -176,10 +179,16 @@ int main(int argc, char* argv[])
 
 	if (exception.length() > 0) {
 		printf("exception:%s\n", exception.c_str());
+	} else {
+		uv_idle_t mainloop_handle;
+		uv_idle_init(uv_default_loop(), &mainloop_handle);
+		uv_idle_start(&mainloop_handle, mainLoop);
+		BKQueue::tick();
 	}
 
-	mainLoop(win);
 	BKQueue::close();
+	v8::V8::Dispose();
+	v8::V8::ShutdownPlatform();
 	deInitGLFW();
 	printf("Bakery Canvas terminated.\n");
 	return 0;

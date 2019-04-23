@@ -6,7 +6,11 @@ namespace BKQueue {
   }
 
   int tick() {
-    return uv_run(uv_default_loop(), UV_RUN_NOWAIT);
+    return uv_run(uv_default_loop(), UV_RUN_DEFAULT);
+  }
+
+  void stop() {
+    uv_stop(uv_default_loop());
   }
 
   int close() {
