@@ -7,7 +7,9 @@
  * 5 
  * 2 
  * 3 
- * 6 
+ * 6
+ * 10
+ * 9
  * ```
  */
 
@@ -32,3 +34,17 @@ setTimeout(() => {
 }, 0)
 
 log(7);
+
+requestAnimationFrame(() => {
+  requestAnimationFrame(() => {
+    log(9);
+  });
+  let id = requestAnimationFrame(() => {
+    log(9.1);
+  });
+  log(8);
+  setTimeout(() => {
+    log(10);
+    cancelAnimationFrame(id);
+  }, 0);
+});

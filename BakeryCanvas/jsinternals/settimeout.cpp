@@ -54,7 +54,7 @@ namespace BKJSInternals {
 
     uv_timer_t* timer = BKQueue::createTimer(_timer_callback, time);
 
-    auto* isolate = v8::Isolate::GetCurrent();
+    auto isolate = v8::Isolate::GetCurrent();
     v8::Persistent<v8::Function>* func = new v8::Persistent<v8::Function>(isolate, callback);
 
     TimerInfo* timerInfo = (TimerInfo*)malloc(sizeof(TimerInfo));

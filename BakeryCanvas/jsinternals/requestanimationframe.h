@@ -11,9 +11,14 @@
 #include "v8pp/persistent.hpp"
 #include "v8pp/throw_ex.hpp"
 #include "v8pp/utility.hpp"
+#include <cstdint>
+#include <queue>
+#include <set>
 
-#include "jsinternals/log.h"
-#include "jsinternals/settimeout.h"
-#include "jsinternals/requestanimationframe.h"
+#include "queue/queue.h"
 
-void Bind_Internals(v8::Isolate* iso);
+namespace BKJSInternals {
+  int64_t requestAnimationFrame(v8::Local<v8::Function> callback);
+  void cancelAnimationFrame(int64_t timerId);
+  void _animationCallback(uv_idle_t* handle);
+}  // namespace BKJSInternals

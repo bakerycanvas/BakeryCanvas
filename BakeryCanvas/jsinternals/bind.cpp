@@ -11,4 +11,8 @@ void Bind_Internals(v8::Isolate* isolate) {
   isolate->GetCurrentContext()->Global()->Set(v8::String::NewFromUtf8(isolate, "clearTimeout"), v8_clearTimeout);
   v8::Local<v8::Function> v8_clearInterval = v8pp::wrap_function(isolate, "clearInterval", &BKJSInternals::clearInterval);
   isolate->GetCurrentContext()->Global()->Set(v8::String::NewFromUtf8(isolate, "clearInterval"), v8_clearInterval);
+  v8::Local<v8::Function> v8_requestAnimationFrame = v8pp::wrap_function(isolate, "requestAnimationFrame", &BKJSInternals::requestAnimationFrame);
+  isolate->GetCurrentContext()->Global()->Set(v8::String::NewFromUtf8(isolate, "requestAnimationFrame"), v8_requestAnimationFrame);
+  v8::Local<v8::Function> v8_cancelAnimationFrame = v8pp::wrap_function(isolate, "cancelAnimationFrame", &BKJSInternals::cancelAnimationFrame);
+  isolate->GetCurrentContext()->Global()->Set(v8::String::NewFromUtf8(isolate, "cancelAnimationFrame"), v8_cancelAnimationFrame);
 }
