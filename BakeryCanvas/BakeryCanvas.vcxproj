@@ -128,10 +128,18 @@
   <ItemGroup>
     <ClCompile Include="Bind_GL.cpp" />
     <ClCompile Include="glad.cpp" />
+    <ClCompile Include="internals\bind.cpp" />
+    <ClCompile Include="internals\log.cpp" />
+    <ClCompile Include="internals\settimeout.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="queue\queue.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Bind_GL.h" />
+    <ClInclude Include="internals\bind.h" />
+    <ClInclude Include="internals\log.h" />
+    <ClInclude Include="internals\settimeout.h" />
+    <ClInclude Include="queue\queue.h" />
     <ClInclude Include="v8pp\call_from_v8.hpp" />
     <ClInclude Include="v8pp\call_v8.hpp" />
     <ClInclude Include="v8pp\class.hpp" />
