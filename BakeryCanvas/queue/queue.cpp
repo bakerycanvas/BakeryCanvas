@@ -1,18 +1,7 @@
 #include "queue.h"
 
 namespace BKQueue {
-  // uv_loop_t* loop;
-
   int start() {
-    // loop = (uv_loop_t*)malloc(sizeof(uv_loop_t));
-    // uv_loop_init(loop);
-
-    // uv_idle_t idler;
-
-    // uv_idle_init(uv_default_loop(), &idler);
-    // uv_idle_start(&idler, wait_for_a_while);
-
-    // free(loop);
     return 0;
   }
 
@@ -33,11 +22,11 @@ namespace BKQueue {
 
   void destoryTimer(uv_timer_t* timer) {
     uv_timer_stop(timer);
-    uv_close((uv_handle_t *)timer, on_timer_close_complete);
+    uv_close((uv_handle_t *)timer, _afterHandleClose);
   }
 
-  void on_timer_close_complete(uv_handle_t* timer) {
-    free(timer);
+  void _afterHandleClose(uv_handle_t* handle) {
+    free(handle);
   }
 
 }  // namespace BKQueue

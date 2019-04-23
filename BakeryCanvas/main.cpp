@@ -128,7 +128,7 @@ int main(int argc, char* argv[])
 		}
 	}
 
-	printf("\n\n");
+	printf("Bakery Canvas running...\n\n");
 
 	std::string scriptText;
 	if (!filename.empty()) {
@@ -169,10 +169,18 @@ int main(int argc, char* argv[])
 	} else {
 		V8RunScript(v8_main_context, scriptText, result, exception);
 	}
-	printf("\n\n\nBakery Canvas running...\n\nresult:%s\nexceptions:%s\n", result.c_str(), exception.c_str());
+
+	// if (result.length() > 0) {
+	// 	printf("result:%s\n", result.c_str());
+	// }
+
+	if (exception.length() > 0) {
+		printf("exception:%s\n", exception.c_str());
+	}
 
 	mainLoop(win);
 	BKQueue::close();
 	deInitGLFW();
+	printf("Bakery Canvas terminated.\n");
 	return 0;
 }

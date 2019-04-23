@@ -15,7 +15,7 @@ INCLUDE_DIRECTORIES("${PROJECT_SOURCE_DIR}/BakeryCanvas/include") # 头文件包
 INCLUDE_DIRECTORIES("${PROJECT_SOURCE_DIR}/BakeryCanvas") # 头文件包含目录
 
 # 编译参数
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -stdlib=libc++")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -stdlib=libc++")
 # 默认 C 编译器
 SET(CMAKE_C_COMPILER "/usr/bin/clang") 
 # 默认 C++ 编译器

@@ -24,7 +24,6 @@ namespace BKJSInternals {
   }
 
   void clearTimeout(int timerId) {
-    auto isolate = v8::Isolate::GetCurrent();
     auto timer = timerIdMap[timerId];
     auto timerInfo = callbackMap[timer];
 
@@ -65,7 +64,6 @@ namespace BKJSInternals {
 
     timerIdMap.insert(std::make_pair(timerId, timer));
     callbackMap.insert(std::make_pair(timer, timerInfo));
-    printf("%d", timerId);
     return timerId;
   }
 
