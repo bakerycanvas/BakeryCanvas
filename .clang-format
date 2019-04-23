@@ -108,7 +108,7 @@ IncludeCategories:
 # 缩进case标签
 IndentCaseLabels:	true
 # 缩进宽度
-IndentWidth:	2
+IndentWidth:	4
 # 函数返回类型换行时，缩进函数声明或函数定义的函数名
 IndentWrappedFunctionNames:	false
 # 保留在块开始处的空行
@@ -168,6 +168,6 @@ SpacesInSquareBrackets:	false
 # 标准: Cpp03, Cpp11, Auto
 Standard:	Cpp11
 # tab宽度
-TabWidth:	2
+TabWidth:	4
 # 使用tab字符: Never, ForIndentation, ForContinuationAndIndentation, Always
 UseTab:	Never

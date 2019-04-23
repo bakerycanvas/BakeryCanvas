@@ -302,10 +302,58 @@ struct convert<T, typename std::enable_if<std::is_floating_point<T>::value>::typ
 
 //see void* as intptr_t
 template<>
-struct convert<void*> : convert<intptr_t> {};
+struct convert<void*>
+{
+	using from_type = void*;
+	using to_type = v8::Local<v8::BigInt>;
+
+	static bool is_valid(v8::Isolate*, v8::Local<v8::Value> value)
+	{
+		return !value.IsEmpty() && value->IsNumber();
+	}
+
+	static from_type from_v8(v8::Isolate* isolate, v8::Local<v8::Value> value)
+	{
+		if (!is_valid(isolate, value))
+		{
+			throw invalid_argument(isolate, value, "Number");
+		}
+
+		return (void*)(static_cast<intptr_t>(value->IntegerValue(isolate->GetCurrentContext()).FromJust()));
+	}
+
+	static to_type to_v8(v8::Isolate* isolate, from_type value)
+	{
+		return v8::BigInt::New(isolate, (double)(intptr_t)value);
+	}
+};
 
 template<>
-struct convert<const void*> : convert<intptr_t> {};
+struct convert<const void*>
+{
+	using from_type = const void*;
+	using to_type = v8::Local<v8::BigInt>;
+
+	static bool is_valid(v8::Isolate*, v8::Local<v8::Value> value)
+	{
+		return !value.IsEmpty() && value->IsNumber();
+	}
+
+	static from_type from_v8(v8::Isolate* isolate, v8::Local<v8::Value> value)
+	{
+		if (!is_valid(isolate, value))
+		{
+			throw invalid_argument(isolate, value, "Number");
+		}
+
+		return (void*)(static_cast<intptr_t>(value->IntegerValue(isolate->GetCurrentContext()).FromJust()));
+	}
+
+	static to_type to_v8(v8::Isolate* isolate, from_type value)
+	{
+        return v8::BigInt::New(isolate, (double)(intptr_t)value);
+	}
+};
 
 // convert Array <-> std::array
 template<typename T, size_t N>

@@ -1,18 +1,17 @@
 #include "bind.h"
 
+#define BIND_INTERNAL_FUNC_DIFF(v8name, localname)                                                         \
+  v8::Local<v8::Function> v8_##v8name = v8pp::wrap_function(isolate, #v8name, &BKJSInternals::localname); \
+  isolate->GetCurrentContext()->Global()->Set(v8::String::NewFromUtf8(isolate, #v8name), v8_##v8name);
+
+#define BIND_INTERNAL_FUNC(x) BIND_INTERNAL_FUNC_DIFF(x,x)
+
 void Bind_Internals(v8::Isolate* isolate) {
-  v8::Local<v8::Function> v8_log = v8pp::wrap_function(isolate, "log", &BKJSInternals::log);
-  isolate->GetCurrentContext()->Global()->Set(v8::String::NewFromUtf8(isolate, "log"), v8_log);
-  v8::Local<v8::Function> v8_setTimeout = v8pp::wrap_function(isolate, "setTimeout", &BKJSInternals::setTimeout);
-  isolate->GetCurrentContext()->Global()->Set(v8::String::NewFromUtf8(isolate, "setTimeout"), v8_setTimeout);
-  v8::Local<v8::Function> v8_setInterval = v8pp::wrap_function(isolate, "setInterval", &BKJSInternals::setInterval);
-  isolate->GetCurrentContext()->Global()->Set(v8::String::NewFromUtf8(isolate, "setInterval"), v8_setInterval);
-  v8::Local<v8::Function> v8_clearTimeout = v8pp::wrap_function(isolate, "clearTimeout", &BKJSInternals::clearTimeout);
-  isolate->GetCurrentContext()->Global()->Set(v8::String::NewFromUtf8(isolate, "clearTimeout"), v8_clearTimeout);
-  v8::Local<v8::Function> v8_clearInterval = v8pp::wrap_function(isolate, "clearInterval", &BKJSInternals::clearInterval);
-  isolate->GetCurrentContext()->Global()->Set(v8::String::NewFromUtf8(isolate, "clearInterval"), v8_clearInterval);
-  v8::Local<v8::Function> v8_requestAnimationFrame = v8pp::wrap_function(isolate, "requestAnimationFrame", &BKJSInternals::requestAnimationFrame);
-  isolate->GetCurrentContext()->Global()->Set(v8::String::NewFromUtf8(isolate, "requestAnimationFrame"), v8_requestAnimationFrame);
-  v8::Local<v8::Function> v8_cancelAnimationFrame = v8pp::wrap_function(isolate, "cancelAnimationFrame", &BKJSInternals::cancelAnimationFrame);
-  isolate->GetCurrentContext()->Global()->Set(v8::String::NewFromUtf8(isolate, "cancelAnimationFrame"), v8_cancelAnimationFrame);
+  BIND_INTERNAL_FUNC(log);
+  BIND_INTERNAL_FUNC(setTimeout);
+  BIND_INTERNAL_FUNC(setInterval);
+  BIND_INTERNAL_FUNC(clearTimeout);
+  BIND_INTERNAL_FUNC(clearInterval);
+  BIND_INTERNAL_FUNC(requestAnimationFrame);
+  BIND_INTERNAL_FUNC(cancelAnimationFrame);
 }

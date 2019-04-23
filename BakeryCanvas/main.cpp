@@ -20,6 +20,8 @@
 #ifdef WIN32
 #pragma comment(lib, "v8_monolith")
 #pragma comment(lib, "glfw3dll")
+//use shared lib
+#pragma comment(lib, "libuv")
 #pragma comment(lib, "dbghelp")
 #pragma comment(lib, "winmm")
 #pragma comment(lib, "shlwapi")
@@ -168,7 +170,7 @@ int main(int argc, char* argv[])
 
 	std::string result, exception;
 	if (scriptText.empty()) {
-		V8RunScript(v8_main_context, "gl.clearColor(0.2, 0.3, 0.3, 1.0);\n gl.clear(gl.GL_COLOR_BUFFER_BIT);", result, exception);
+		V8RunScript(v8_main_context, "WebGLTexture", result, exception);
 	} else {
 		V8RunScript(v8_main_context, scriptText, result, exception);
 	}

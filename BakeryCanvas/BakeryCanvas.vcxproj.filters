@@ -16,6 +16,12 @@
     <Filter Include="v8pp">
       <UniqueIdentifier>{36fe961a-8154-424b-a553-8f99d85e3a42}</UniqueIdentifier>
     </Filter>
+    <Filter Include="queue">
+      <UniqueIdentifier>{128e3e4a-fbd2-473c-936d-f44ff9436a70}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="jsinternals">
+      <UniqueIdentifier>{1c443625-de4d-4d4e-a2a6-075d626f41ec}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Bind_GL.cpp">
@@ -26,6 +32,21 @@
     </ClCompile>
     <ClCompile Include="glad.cpp">
       <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="queue\queue.cpp">
+      <Filter>queue</Filter>
+    </ClCompile>
+    <ClCompile Include="jsinternals\bind.cpp">
+      <Filter>jsinternals</Filter>
+    </ClCompile>
+    <ClCompile Include="jsinternals\log.cpp">
+      <Filter>jsinternals</Filter>
+    </ClCompile>
+    <ClCompile Include="jsinternals\requestanimationframe.cpp">
+      <Filter>jsinternals</Filter>
+    </ClCompile>
+    <ClCompile Include="jsinternals\settimeout.cpp">
+      <Filter>jsinternals</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -88,6 +109,21 @@
     </ClInclude>
     <ClInclude Include="v8pp\utility.hpp">
       <Filter>v8pp</Filter>
+    </ClInclude>
+    <ClInclude Include="queue\queue.h">
+      <Filter>queue</Filter>
+    </ClInclude>
+    <ClInclude Include="jsinternals\bind.h">
+      <Filter>jsinternals</Filter>
+    </ClInclude>
+    <ClInclude Include="jsinternals\log.h">
+      <Filter>jsinternals</Filter>
+    </ClInclude>
+    <ClInclude Include="jsinternals\requestanimationframe.h">
+      <Filter>jsinternals</Filter>
+    </ClInclude>
+    <ClInclude Include="jsinternals\settimeout.h">
+      <Filter>jsinternals</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
