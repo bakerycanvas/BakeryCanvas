@@ -138,6 +138,7 @@
     <ClCompile Include="jsinternals\settimeout.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="queue\queue.cpp" />
+    <ClCompile Include="system.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Bind_GL.h" />
@@ -146,6 +147,7 @@
     <ClInclude Include="jsinternals\requestanimationframe.h" />
     <ClInclude Include="jsinternals\settimeout.h" />
     <ClInclude Include="queue\queue.h" />
+    <ClInclude Include="system.h" />
     <ClInclude Include="v8pp\call_from_v8.hpp" />
     <ClInclude Include="v8pp\call_v8.hpp" />
     <ClInclude Include="v8pp\class.hpp" />
