@@ -101,9 +101,9 @@ ForEachMacros:	[ foreach, Q_FOREACH, BOOST_FOREACH ]
 IncludeCategories: 
   - Regex:	'^"(llvm|llvm-c|clang|clang-c)/'
     Priority:	2
-  - Regex:	'^"(glad)/'
+  - Regex:	'^<(glad)/'
     Priority:	2
-  - Regex:	'^"(GLFW)/'
+  - Regex:	'^<(GLFW)/'
     Priority:	3
   - Regex:	'^(<|"(gtest|isl|json)/)'
     Priority:	3

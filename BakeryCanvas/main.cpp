@@ -6,12 +6,12 @@
 #include <fstream>
 #include <iostream>
 #include <libplatform/libplatform.h>
+#include <list>
 #include <sstream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <string>
-#include <list>
 #ifdef __APPLE__
 #include <CoreFoundation/CoreFoundation.h>
 #endif
