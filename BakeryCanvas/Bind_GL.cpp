@@ -221,7 +221,7 @@ v8::Local<v8::Value> glGetParameter(GLenum pname)
 
 #define BIND_CLASS_WITH_MEMBER(x, member) v8pp::class_<x> class_##x(iso);\
 	class_##x.inherit<WebGLObject>();\
-	class_##x##member;\
+	class_##x member;\
 global->Set(v8pp::to_v8(iso, #x), class_##x.js_function_template()->GetFunction());
 
 
@@ -233,7 +233,6 @@ void Bind_GL(v8::Isolate * iso)
 	v8pp::class_<WebGLObject> class_WebGLObject(iso);
 	global->Set(v8pp::to_v8(iso, "WebGLObject"), class_WebGLObject.create_object(iso));
 
-	//WebGLActiveInfo
 	BIND_CLASS_WITH_MEMBER(WebGLActiveInfo,
 		.set("size", v8pp::property(&WebGLActiveInfo::getSize))
 		.set("type", v8pp::property(&WebGLActiveInfo::getType))

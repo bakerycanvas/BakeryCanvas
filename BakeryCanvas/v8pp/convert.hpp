@@ -305,7 +305,7 @@ template<>
 struct convert<void*>
 {
 	using from_type = void*;
-	using to_type = v8::Local<v8::BigInt>;
+	using to_type = v8::Local<v8::Number>;
 
 	static bool is_valid(v8::Isolate*, v8::Local<v8::Value> value)
 	{
@@ -324,7 +324,7 @@ struct convert<void*>
 
 	static to_type to_v8(v8::Isolate* isolate, from_type value)
 	{
-		return v8::BigInt::New(isolate, (double)(intptr_t)value);
+		return v8::Number::New(isolate, (double)(intptr_t)value);
 	}
 };
 
@@ -332,7 +332,7 @@ template<>
 struct convert<const void*>
 {
 	using from_type = const void*;
-	using to_type = v8::Local<v8::BigInt>;
+	using to_type = v8::Local<v8::Number>;
 
 	static bool is_valid(v8::Isolate*, v8::Local<v8::Value> value)
 	{
@@ -351,7 +351,7 @@ struct convert<const void*>
 
 	static to_type to_v8(v8::Isolate* isolate, from_type value)
 	{
-        return v8::BigInt::New(isolate, (double)(intptr_t)value);
+        return v8::Number::New(isolate, (double)(intptr_t)value);
 	}
 };
 
