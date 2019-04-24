@@ -1,9 +1,9 @@
 // Copyright 2015 the V8 project authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
+#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <fstream>
-#include <glad/glad.h>
 #include <iostream>
 #include <libplatform/libplatform.h>
 #include <sstream>
@@ -121,21 +121,6 @@ int main(int argc, char* argv[]) {
 
     printf("Bakery Canvas running...\n\n");
 
-    std::string scriptText;
-    if (!filename.empty()) {
-        std::ifstream file;
-        file.open(filename);
-
-        if (!file) {
-            printf("file read error\n");
-            return 0;
-        }
-
-        std::ostringstream tmp;
-        tmp << file.rdbuf();
-        scriptText = tmp.str();
-    }
-
     v8::V8::InitializeICUDefaultLocation(argv[0]);
     v8::V8::InitializeExternalStartupData(argv[0]);
     std::unique_ptr<v8::TracingController> tracing_controller = {};
@@ -155,9 +140,26 @@ int main(int argc, char* argv[]) {
     BKQueue::start();
 
     std::string result, exception;
-    if (scriptText.empty()) {
+
+    if (filename.empty()) {
         V8RunScript(v8_main_context, "WebGLTexture", result, exception);
     } else {
+        std::string scriptText;
+        std::ifstream file;
+        file.open(filename);
+
+        std::string path = filename.substr(0, filename.find_last_of('/'));
+
+        printf("%s", path.c_str());
+
+        if (!file) {
+            printf("file read error\n");
+            return 0;
+        }
+
+        std::ostringstream tmp;
+        tmp << file.rdbuf();
+        scriptText = tmp.str();
         V8RunScript(v8_main_context, scriptText, result, exception);
     }
 
