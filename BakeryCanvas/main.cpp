@@ -11,10 +11,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <string>
+#include <list>
+#ifdef __APPLE__
+#include <CoreFoundation/CoreFoundation.h>
+#endif
 
 #include "Bind_GL.h"
 #include "jsinternals/bind.h"
 #include "queue/queue.h"
+#include "system.h"
 
 #ifdef WIN32
 #pragma comment(lib, "v8_monolith")
@@ -86,7 +91,7 @@ void V8RunScript(v8::Local<v8::Context> v8_main_context, std::string scriptsrc, 
     v8::Local<v8::String> source = v8::String::NewFromUtf8(isolate, scriptsrc.c_str(), v8::NewStringType::kNormal).ToLocalChecked();
     v8::MaybeLocal<v8::Script> maybescript = v8::Script::Compile(v8_main_context, source);
     if (maybescript.IsEmpty()) {
-        v8::Local<v8::Value> exception = tryHandler.Exception();
+        v8::Local<v8::Value> exception = tryHandler.StackTrace(v8_main_context).ToLocalChecked();
         v8::String::Utf8Value exception_utf8(isolate, exception);
         exceptionstr = *exception_utf8;
         resultstr.clear();
@@ -95,7 +100,7 @@ void V8RunScript(v8::Local<v8::Context> v8_main_context, std::string scriptsrc, 
     v8::Local<v8::Script> script = maybescript.ToLocalChecked();
     v8::MaybeLocal<v8::Value> result = script->Run(v8_main_context);
     if (result.IsEmpty()) {
-        v8::Local<v8::Value> exception = tryHandler.Exception();
+        v8::Local<v8::Value> exception = tryHandler.StackTrace(v8_main_context).ToLocalChecked();
         v8::String::Utf8Value exception_utf8(isolate, exception);
         exceptionstr = *exception_utf8;
         resultstr.clear();
@@ -140,27 +145,60 @@ int main(int argc, char* argv[]) {
     BKQueue::start();
 
     std::string result, exception;
+    std::string exceptionFilename;
 
     if (filename.empty()) {
         V8RunScript(v8_main_context, "WebGLTexture", result, exception);
     } else {
-        std::string scriptText;
-        std::ifstream file;
-        file.open(filename);
+        // get current working directory
+        std::string cwd = filename.substr(0, filename.find_last_of('/'));
+        std::ifstream entryFile;
+        std::string entryFileName = cwd + "/entry.json";
+        entryFile.open(entryFileName);
 
-        std::string path = filename.substr(0, filename.find_last_of('/'));
+        std::list<std::string> fileList;
 
-        printf("%s", path.c_str());
-
-        if (!file) {
-            printf("file read error\n");
-            return 0;
+        if (!entryFile) {
+            printf("No entry.json find at %s, try to load single file %s\n", entryFileName.c_str(), filename.c_str());
+            fileList.push_back(filename);
+        } else {
+            v8::Local<v8::Context> tempContext;
+            std::ostringstream tmp;
+            tmp << entryFile.rdbuf();
+            v8::Local<v8::String> code = v8::String::NewFromUtf8(isolate, tmp.str().c_str(), v8::NewStringType::kNormal).ToLocalChecked();
+            v8::Local<v8::Value> entryValue = v8::JSON::Parse(tempContext, code).ToLocalChecked();
+            v8::Local<v8::Object> entryObject = v8::Local<v8::Object>::Cast(entryValue);
+            if (!entryObject.IsEmpty()) {
+                v8::Local<v8::String> keyName = v8::String::NewFromUtf8(isolate, "files", v8::NewStringType::kNormal).ToLocalChecked();
+                v8::Local<v8::Array> fileArray = v8::Local<v8::Array>::Cast(entryObject->Get(keyName));
+                for (int i = 0; i < fileArray->Length(); i++) {
+                    v8::Local<v8::String> fileValue = v8::Local<v8::String>::Cast(fileArray->Get(i));
+                    std::string fileName = *v8::String::Utf8Value(isolate, fileValue);
+                    printf("%s\n", (cwd + "/" + fileName).c_str());
+                    fileList.push_back(cwd + "/" + fileName);
+                }
+            }
         }
 
-        std::ostringstream tmp;
-        tmp << file.rdbuf();
-        scriptText = tmp.str();
-        V8RunScript(v8_main_context, scriptText, result, exception);
+        for (auto it = fileList.begin(); it != fileList.end(); it++) {
+            std::string filename = *it;
+            std::string scriptText;
+            std::ifstream file;
+            file.open(filename);
+            exceptionFilename = filename;
+
+            if (!file) {
+                std::string head = "读取文件失败：";
+                BKSystem::showMessage("Bakery Canvas Exception", (head + filename).c_str(), BKSystem::MessageLevel::ERROR);
+                printf("file read error\n");
+                return 0;
+            }
+
+            std::ostringstream tmp;
+            tmp << file.rdbuf();
+            scriptText = tmp.str();
+            V8RunScript(v8_main_context, scriptText, result, exception);
+        }
     }
 
     // if (result.length() > 0) {
@@ -168,7 +206,8 @@ int main(int argc, char* argv[]) {
     // }
 
     if (exception.length() > 0) {
-        printf("exception:%s\n", exception.c_str());
+        BKSystem::showMessage("Bakery Canvas Exception", (exceptionFilename + "\n" + exception).c_str(), BKSystem::MessageLevel::ERROR);
+        printf("Uncaught exception:\n%s", exception.c_str());
     } else {
         uv_idle_t mainloop_handle;
         uv_idle_init(uv_default_loop(), &mainloop_handle);
