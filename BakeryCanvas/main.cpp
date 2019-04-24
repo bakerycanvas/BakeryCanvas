@@ -11,6 +11,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <string>
+#ifdef __APPLE__
+#include <CoreFoundation/CoreFoundation.h>
+#endif
 
 #include "Bind_GL.h"
 #include "jsinternals/bind.h"
@@ -106,6 +109,24 @@ void V8RunScript(v8::Local<v8::Context> v8_main_context, std::string scriptsrc, 
     }
 }
 
+bool showMessage(const char* title, const char* content) {
+    #ifdef __APPLE__
+    CFStringRef headerText = CFStringCreateWithCString(NULL, title, kCFStringEncodingUTF8);
+    CFStringRef messageText = CFStringCreateWithCString(NULL, content, kCFStringEncodingUTF8);
+    CFOptionFlags uiresult;
+    CFUserNotificationDisplayAlert(0, kCFUserNotificationNoteAlertLevel, NULL, NULL, NULL, headerText, messageText, NULL, NULL, NULL, &uiresult);
+
+    CFRelease(headerText);
+    CFRelease(messageText);
+
+    return uiresult == kCFUserNotificationDefaultResponse;
+    #endif
+
+    #ifdef WIN32
+    #endif
+    return false;
+}
+
 int main(int argc, char* argv[]) {
     GLFWwindow* win = InitWindow();
     // init V8, must be in main, or caused 9999+ kinds of crashes
@@ -168,6 +189,9 @@ int main(int argc, char* argv[]) {
     // }
 
     if (exception.length() > 0) {
+        std::stringstream content;
+        content << "Exception:\n" << exception;
+        showMessage("Bakery Canvas", content.str().c_str());
         printf("exception:%s\n", exception.c_str());
     } else {
         uv_idle_t mainloop_handle;
