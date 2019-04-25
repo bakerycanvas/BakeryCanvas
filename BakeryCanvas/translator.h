@@ -11,8 +11,6 @@
 #include <vector>
 
 namespace BKShaderTranslator {
-    typedef std::vector<char*> ShaderSource;
-    std::string translate(std::string& str);
+    std::string translate(GLenum type, const std::string& str);
     void GenerateResources(ShBuiltInResources* resources);
-    static bool ReadShaderSource(const char* fileName, ShaderSource& source);
 }

@@ -11,6 +11,7 @@
 #include "v8pp/persistent.hpp"
 #include "v8pp/throw_ex.hpp"
 #include "v8pp/utility.hpp"
+#include "translator.h"
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -116,6 +117,7 @@ class WebGLShader : public WebGLObject
 {
 public:
 	GLuint shader;
+	GLenum type;
 
 	~WebGLShader()
 	{

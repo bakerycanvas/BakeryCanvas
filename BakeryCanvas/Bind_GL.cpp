@@ -277,6 +277,7 @@ v8::Local<v8::Object> _glCreateShader(GLenum type)
 {
 	auto shader = new WebGLShader();
 	shader->shader = glCreateShader(type);
+	shader->type = type;
 	return v8pp::class_<WebGLShader>::import_external(v8::Isolate::GetCurrent(), shader);
 }
 
@@ -332,9 +333,11 @@ void _glDeleteBuffer(WebGLBuffer &buffer)
 void _glShaderSource(WebGLShader &shader, const std::string &source)
 {
 	CHECK_VALID(shader);
-	auto s = mapShader(source.c_str());
-	const char *v = s.c_str();
-	glShaderSource(shader.shader, 1, &v, NULL);
+	// auto s = mapShader(source.c_str());
+
+  const char* v = BKShaderTranslator::translate(shader.type, source).c_str();
+
+  glShaderSource(shader.shader, 1, &v, NULL);
 }
 
 void _glCompileShader(WebGLShader &shader)

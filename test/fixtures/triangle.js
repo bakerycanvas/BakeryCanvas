@@ -14,27 +14,21 @@ log("create buffer");
 
 // Vertex shader program
 const vsSource = `
-#version 330
-
-in vec3 aPos;
-void main(){
-(gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0));
+attribute vec3 aPos;
+void main(void) {
+    gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);
 }
 `;
 
 // Fragment shader program
-
 const fsSource = `
-#version 330
-
-out vec4 FragColor;
-void main(){
-(FragColor = vec4(1.0, 0.5, 0.2, 1.0));
+void main(void) {
+    gl_FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);
 }
 `;
 
 const shaderProgram = initShaderProgram(vsSource, fsSource);
-const attrib_loc = gl.getAttribLocation(shaderProgram, 'aPos');
+const attrib_loc = gl.getAttribLocation(shaderProgram, '_aPos');
 
 log("finish program");
 

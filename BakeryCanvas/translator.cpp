@@ -3,7 +3,7 @@
 namespace BKShaderTranslator {
     const unsigned int NUM_SOURCE_STRINGS = 1;
 
-    std::string translate(std::string& str) {
+    std::string translate(GLenum type, const std::string& str) {
 
         ShShaderSpec spec = SH_WEBGL_SPEC;
         ShShaderOutput output = SH_GLSL_330_CORE_OUTPUT;
@@ -14,59 +14,23 @@ namespace BKShaderTranslator {
         GenerateResources(&resources);
 
         sh::Initialize();
-        auto compiler = sh::ConstructCompiler(GL_FRAGMENT_SHADER, spec, output, &resources);
 
-        ShaderSource source;
-        if (!ReadShaderSource("/Users/Icemic/Workspace/BakeryCanvas/test/fixtures/test.frag", source))
-            return "";
+        auto compiler = sh::ConstructCompiler(type, spec, output, &resources);
 
-        // const char* const shaderStrings[] = { "attribute vec3 aPos;"
-        //                                       "void main(void){ gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);"
-        //                                       "}" };
+        auto x = str.c_str();
 
-        // std::string str1 = "attribute vec3 aPos;void main(void){ gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);}";
-        // auto str2 = str1.c_str();
-        // auto str3 = &str2;
-
-        int ret = sh::Compile(compiler, &source[0], source.size(), SH_VALIDATE | SH_OBJECT_CODE);
-        printf("%d", ret);
+        std::string code = "";
+        int ret = sh::Compile(compiler, &x, 1, SH_VALIDATE | SH_OBJECT_CODE);
         if (ret) {
-            std::string code = sh::GetObjectCode(compiler);
+            code = sh::GetObjectCode(compiler);
+            printf("output\n");
             printf(code.c_str());
             printf("\n\n");
-            return code;
-        }
-        return "";
-    }
-
-    static bool ReadShaderSource(const char* fileName, ShaderSource& source) {
-        FILE* in = fopen(fileName, "rb");
-        if (!in) {
-            printf("Error: unable to open input file: %s\n", fileName);
-            return false;
         }
 
-        // Obtain file size.
-        fseek(in, 0, SEEK_END);
-        size_t count = ftell(in);
-        rewind(in);
-
-        int len = (int)ceil((float)count / (float)NUM_SOURCE_STRINGS);
-        source.reserve(NUM_SOURCE_STRINGS);
-        // Notice the usage of do-while instead of a while loop here.
-        // It is there to handle empty files in which case a single empty
-        // string is added to vector.
-        do {
-            char* data = new char[len + 1];
-            size_t nread = fread(data, 1, len, in);
-            data[nread] = '\0';
-            source.push_back(data);
-
-            count -= nread;
-        } while (count > 0);
-
-        fclose(in);
-        return true;
+        sh::Destruct(compiler);
+        sh::Finalize();
+        return code;
     }
 
     void GenerateResources(ShBuiltInResources* resources) {

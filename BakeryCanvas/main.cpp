@@ -20,7 +20,6 @@
 #include "jsinternals/bind.h"
 #include "queue/queue.h"
 #include "system.h"
-#include "translator.h"
 
 #ifdef WIN32
 #pragma comment(lib, "v8_monolith")
@@ -140,8 +139,6 @@ int main(int argc, char* argv[]) {
             filename = argv[1];
         }
     }
-
-    BKShaderTranslator::translate(filename);
 
     printf("Bakery Canvas running...\n\n");
 
