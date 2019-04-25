@@ -148,8 +148,11 @@ int main(int argc, char* argv[]) {
     std::string exceptionFilename;
 
     if (filename.empty()) {
-        V8RunScript(v8_main_context, "WebGLTexture", result, exception);
-    } else {
+        V8RunScript(v8_main_context, "var s=gl.createShader(gl.VERTEX_SHADER);gl.getShaderParameter(s,0)", result, exception);
+		if (result.length() > 0) {
+			printf("result:%s\n", result.c_str());
+		}
+	} else {
         // get current working directory
         std::string cwd = filename.substr(0, filename.find_last_of('/'));
         std::ifstream entryFile;
@@ -201,13 +204,10 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    // if (result.length() > 0) {
-    // 	printf("result:%s\n", result.c_str());
-    // }
-
     if (exception.length() > 0) {
         BKSystem::showMessage("Bakery Canvas Exception", (exceptionFilename + "\n" + exception).c_str(), BKSystem::MessageLevel::ERROR);
         printf("Uncaught exception:\n%s", exception.c_str());
+		system("pause");
     } else {
         uv_idle_t mainloop_handle;
         uv_idle_init(uv_default_loop(), &mainloop_handle);

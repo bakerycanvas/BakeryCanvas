@@ -29,7 +29,8 @@ bool _glIsContextLost()
 	return false;
 }
 
-void _glVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, intptr_t pointer)
+//use GLboolean will cause convert error in v8pp when giving a boolean in js
+void _glVertexAttribPointer(GLuint index, GLint size, GLenum type, bool normalized, GLsizei stride, intptr_t pointer)
 {
 	glVertexAttribPointer(index, size, type, normalized, stride, (const void*)pointer);
 }
@@ -39,17 +40,17 @@ void _glVertexAttrib2fv(GLuint index, intptr_t v)
 	glVertexAttrib2fv(index, (const GLfloat *)v);
 }
 
-void _glUniformMatrix4fv(GLint location, GLsizei count, GLboolean transpose, intptr_t value)
+void _glUniformMatrix4fv(GLint location, GLsizei count, bool transpose, intptr_t value)
 {
 	glUniformMatrix4fv(location, count, transpose, (const GLfloat *)value);
 }
 
-void _glUniformMatrix3fv(GLint location, GLsizei count, GLboolean transpose, intptr_t value)
+void _glUniformMatrix3fv(GLint location, GLsizei count, bool transpose, intptr_t value)
 {
 	glUniformMatrix3fv(location, count, transpose, (const GLfloat *)value);
 }
 
-void _glUniformMatrix2fv(GLint location, GLsizei count, GLboolean transpose, intptr_t value)
+void _glUniformMatrix2fv(GLint location, GLsizei count, bool transpose, intptr_t value)
 {
 	glUniformMatrix2fv(location, count, transpose, (const GLfloat *)value);
 }
@@ -217,6 +218,8 @@ v8::Local<v8::Value> glGetParameter(GLenum pname)
 #define CHECK_VALID2(x,y) if(!x.isValid() || !y.isValid()){_glSetError(GL_INVALID_OPERATION);return;}
 #define CHECK_VALID3(x,y,z) if(!x.isValid() || !y.isValid() || !z.isValid()){_glSetError(GL_INVALID_OPERATION);return;}
 
+#define CHECK_VALID_RETURN(x,ret) if(!x.isValid()){_glSetError(GL_INVALID_OPERATION);return (ret);}
+#define CHECK_VALID_RETURNNULL(x) CHECK_VALID_RETURN(x, v8::Null(v8::Isolate::GetCurrent()))
 
 v8::Local<v8::Object> _glCreateTexture()
 {
@@ -288,10 +291,25 @@ void _glDeleteFramebuffer(WebGLFramebuffer &fbo)
 	fbo.Invalidate();
 }
 
+v8::Local<v8::Object> _glCreateBuffer()
+{
+	auto buffer = new WebGLBuffer();
+	glGenBuffers(1, &buffer->buffer);
+	return v8pp::class_<WebGLBuffer>::import_external(v8::Isolate::GetCurrent(), buffer);
+}
+
+void _glDeleteBuffer(WebGLBuffer &buffer)
+{
+	CHECK_VALID(buffer);
+	glDeleteBuffers(1, &buffer.buffer);
+	buffer.Invalidate();
+}
+
 void _glShaderSource(WebGLShader &shader, const std::string &source)
 {
 	CHECK_VALID(shader);
-	glShaderSource(shader.shader, 1, (const GLchar * const *)source.c_str(), NULL);
+	auto v = source.c_str();
+	glShaderSource(shader.shader, 1, &v, NULL);
 }
 
 void _glCompileShader(WebGLShader &shader)
@@ -322,6 +340,194 @@ void _glUseProgram(WebGLProgram &program)
 {
 	CHECK_VALID(program);
 	glUseProgram(program.program);
+}
+
+v8::Local<v8::Value> _glGetShaderParameter(WebGLShader &shader, GLenum pname)
+{
+	CHECK_VALID_RETURNNULL(shader);
+	GLint res;
+	switch (pname)
+	{
+	case GL_SHADER_TYPE:
+		glGetShaderiv(shader.shader, pname, &res);
+		return v8::Int32::New(v8::Isolate::GetCurrent(), res);
+	case GL_DELETE_STATUS:
+	case GL_COMPILE_STATUS:
+		glGetShaderiv(shader.shader, pname, &res);
+		return v8::Boolean::New(v8::Isolate::GetCurrent(), res);
+	}
+	_glSetError(GL_INVALID_ENUM);
+	return v8::Null(v8::Isolate::GetCurrent());
+}
+
+v8::Local<v8::Value> _glGetShaderInfoLog(WebGLShader &shader)
+{
+	CHECK_VALID_RETURNNULL(shader);
+	GLint len;
+	glGetShaderiv(shader.shader, GL_INFO_LOG_LENGTH, &len);
+	GLchar *buf = (GLchar*)malloc(len);
+	glGetShaderInfoLog(shader.shader, len, &len, buf);
+	auto res = v8::String::NewFromUtf8(v8::Isolate::GetCurrent(), buf);
+	free(buf);
+	return res;
+}
+
+v8::Local<v8::Value> _glGetProgramParameter(WebGLProgram &program, GLenum pname)
+{
+	CHECK_VALID_RETURNNULL(program);
+	GLint res;
+	switch (pname)
+	{
+	case GL_DELETE_STATUS:
+	case GL_LINK_STATUS:
+	case GL_VALIDATE_STATUS:
+		glGetProgramiv(program.program, pname, &res);
+		return v8::Boolean::New(v8::Isolate::GetCurrent(), res);
+	case GL_ATTACHED_SHADERS:
+	case GL_ACTIVE_ATTRIBUTES:
+	case GL_ACTIVE_UNIFORMS:
+		glGetProgramiv(program.program, pname, &res);
+		return v8::Int32::New(v8::Isolate::GetCurrent(), res);
+	}
+	_glSetError(GL_INVALID_ENUM);
+	return v8::Null(v8::Isolate::GetCurrent());
+}
+
+v8::Local<v8::Value> _glGetProgramInfoLog(WebGLProgram &program)
+{
+	CHECK_VALID_RETURNNULL(program);
+	GLint len;
+	glGetProgramiv(program.program, GL_INFO_LOG_LENGTH, &len);
+	GLchar *buf = (GLchar*)malloc(len);
+	glGetProgramInfoLog(program.program, len, &len, buf);
+	auto res = v8::String::NewFromUtf8(v8::Isolate::GetCurrent(), buf);
+	free(buf);
+	return res;
+}
+
+void _glBufferData(const v8::FunctionCallbackInfo<v8::Value>& args)
+{
+	if (args.Length() < 3)
+	{
+		throw std::invalid_argument("need as least 3 parameters");
+	}
+	GLenum target = v8pp::from_v8<GLenum>(v8::Isolate::GetCurrent(), args[0]);
+	GLenum usage = v8pp::from_v8<GLenum>(v8::Isolate::GetCurrent(), args[2]);
+	if (args.Length() > 3)
+	{
+		//webGL2
+		if(args.Length() < 5)
+			throw std::invalid_argument("need as least 5 parameters");
+		GLuint srcOffset = v8pp::from_v8<GLenum>(v8::Isolate::GetCurrent(), args[3], 0);
+		GLuint length = v8pp::from_v8<GLenum>(v8::Isolate::GetCurrent(), args[4], 0);
+		//let opengl check
+		//if (target != GL_ARRAY_BUFFER && target != GL_ELEMENT_ARRAY_BUFFER && target != GL_COPY_READ_BUFFER
+		//	&& target != GL_COPY_WRITE_BUFFER && target != GL_TRANSFORM_FEEDBACK_BUFFER && target != GL_UNIFORM_BUFFER
+		//	&& target != GL_PIXEL_PACK_BUFFER && target != GL_PIXEL_UNPACK_BUFFER)
+		//{
+		//	_glSetError(GL_INVALID_ENUM);
+		//	return;
+		//}
+		//if (usage != GL_STATIC_DRAW && usage != GL_DYNAMIC_DRAW && usage != GL_STREAM_DRAW
+		//	&& usage != GL_STATIC_READ && usage != GL_DYNAMIC_READ && usage != GL_STREAM_READ
+		//	&& usage != GL_STATIC_COPY && usage != GL_DYNAMIC_COPY && usage != GL_STREAM_COPY)
+		//{
+		//	_glSetError(GL_INVALID_ENUM);
+		//	return;
+		//}
+		if (!args[1].IsEmpty() && args[1]->IsArrayBufferView())
+		{
+			v8::Local<v8::ArrayBufferView> array = args[1].As<v8::ArrayBufferView>();
+			if (array->HasBuffer())
+			{
+				auto content = array->Buffer()->GetContents();
+				if (length <= 0)
+					length = content.ByteLength();
+				glBufferData(target, length, (char*)content.Data() + srcOffset, usage);
+				return;
+			}
+		}
+		_glSetError(GL_INVALID_VALUE);
+		return;
+	}
+	//let opengl check
+	//if (target != GL_ARRAY_BUFFER && target != GL_ELEMENT_ARRAY_BUFFER)
+	//{
+	//	_glSetError(GL_INVALID_ENUM);
+	//	return;
+	//}
+	//if (usage != GL_STATIC_DRAW && usage != GL_DYNAMIC_DRAW && usage != GL_STREAM_DRAW)
+	//{
+	//	_glSetError(GL_INVALID_ENUM);
+	//	return;
+	//}
+	if (!args[1].IsEmpty() && args[1]->IsNumber())
+	{
+		GLsizeiptr size = v8pp::from_v8<GLsizeiptr>(v8::Isolate::GetCurrent(), args[1]);
+		glBufferData(target, size, NULL, usage);
+		return;
+	}
+	if (!args[1].IsEmpty() && args[1]->IsArrayBuffer())
+	{
+		v8::Local<v8::ArrayBuffer> array = args[1].As<v8::ArrayBuffer>();
+		auto content = array->GetContents();
+		glBufferData(target, content.ByteLength(), content.Data(), usage);
+		return;
+	}
+	if (!args[1].IsEmpty() && args[1]->IsArrayBufferView())
+	{
+		v8::Local<v8::ArrayBufferView> array = args[1].As<v8::ArrayBufferView>();
+		if (array->HasBuffer())
+		{
+			auto content = array->Buffer()->GetContents();
+			glBufferData(target, content.ByteLength(), content.Data(), usage);
+			return;
+		}
+		else
+		{
+			auto size = array->ByteLength();
+			char *data = (char*)malloc(size);
+			array->CopyContents(data, size);
+			glBufferData(target, size, data, usage);
+			free(data);
+			return;
+		}
+	}
+	_glSetError(GL_INVALID_VALUE);
+}
+
+void _glBindBuffer(GLenum target, WebGLBuffer &buffer)
+{
+	CHECK_VALID(buffer);
+	glBindBuffer(target, buffer.buffer);
+}
+
+GLint _glGetAttribLocation(WebGLProgram &program, const std::string name)
+{
+	CHECK_VALID_RETURN(program, -1);
+	return glGetAttribLocation(program.program, name.c_str());
+}
+
+v8::Local<v8::Value> _glGetUniformLocation(WebGLProgram &program, const std::string name)
+{
+	CHECK_VALID_RETURNNULL(program);
+	if (name.find("webgl_") == 0 || name.find("_webgl_") == 0)
+	{
+		return v8::Null(v8::Isolate::GetCurrent());
+	}
+	if (name.length() > 256)
+	{
+		_glSetError(GL_INVALID_VALUE);
+		return v8::Null(v8::Isolate::GetCurrent());
+	}
+	GLint loc = glGetUniformLocation(program.program, name.c_str());
+	if (loc == -1)
+	{
+		return v8::Null(v8::Isolate::GetCurrent());
+	}
+	auto locobj = new WebGLUniformLocation();
+	locobj->location = loc;
+	return v8pp::class_<WebGLUniformLocation>::import_external(v8::Isolate::GetCurrent(), locobj);
 }
 
 #define BIND_CLASS(x) v8pp::class_<x> class_##x(iso);class_##x.inherit<WebGLObject>();global->Set(v8pp::to_v8(iso, #x), class_##x.js_function_template()->GetFunction());
@@ -408,9 +614,9 @@ void Bind_GL(v8::Isolate * iso)
 		.set("pixelStorei", glPixelStorei)
 		.set("linkProgram", _glLinkProgram)
 		.set("lineWidth", glLineWidth)
-		.set("getUniformLocation", glGetUniformLocation)
-		//.set("getShaderParameter", glGetShaderParameter)
-		.set("getAttribLocation", glGetAttribLocation)
+		.set("getUniformLocation", _glGetUniformLocation)
+		.set("getShaderParameter", _glGetShaderParameter)
+		.set("getAttribLocation", _glGetAttribLocation)
 		.set("generateMipmap", glGenerateMipmap)
 		.set("frontFace", glFrontFace)
 		.set("framebufferTexture2D", glFramebufferTexture2D)
@@ -427,28 +633,28 @@ void Bind_GL(v8::Isolate * iso)
 		.set("deleteRenderbuffer", _glDeleteRenderbuffer)
 		.set("deleteProgram", _glDeleteProgram)
 		.set("deleteFramebuffer", _glDeleteFramebuffer)
-		//.set("deleteBuffer", glDeleteBuffer)
+		.set("deleteBuffer", _glDeleteBuffer)
 		.set("cullFace", glCullFace)
 		.set("createTexture", _glCreateTexture)
 		.set("createShader", _glCreateShader)
 		.set("createRenderbuffer", _glCreateRenderbuffer)
 		.set("createProgram", _glCreateProgram)
 		.set("createFramebuffer", _glCreateFramebuffer)
-		//.set("createBuffer", glCreateBuffer)
+		.set("createBuffer", _glCreateBuffer)
 		.set("compileShader", _glCompileShader)
 		.set("colorMask", glColorMask)
 		.set("clearStencil", glClearStencil)
 		.set("clearDepth", glClearDepth)
 		.set("clearColor", glClearColor)
 		.set("clear", glClear)
-		//.set("bufferData", glBufferData)
+		.set("bufferData", _glBufferData)
 		.set("blendFuncSeparate", glBlendFuncSeparate)
 		.set("blendFunc", glBlendFunc)
 		.set("blendEquationSeparate", glBlendEquationSeparate)
 		.set("blendEquation", glBlendEquation)
 		.set("bindRenderbuffer", glBindRenderbuffer)
 		.set("bindFramebuffer", glBindFramebuffer)
-		.set("bindBuffer", glBindBuffer)
+		.set("bindBuffer", _glBindBuffer)
 		.set("bindAttribLocation", glBindAttribLocation)
 		.set("attachShader", _glAttachShader)
 		.set("activeTexture", glActiveTexture)
@@ -479,10 +685,10 @@ void Bind_GL(v8::Isolate * iso)
 		//.set("getSupportedExtensions", glGetSupportedExtensions)
 		//.set("getShaderSource", glGetShaderSource)
 		//.set("getShaderPrecisionFormat", glGetShaderPrecisionFormat)
-		//.set("getShaderInfoLog", glGetShaderInfoLog)
+		.set("getShaderInfoLog", _glGetShaderInfoLog)
 		//.set("getRenderbufferParameter", glGetRenderbufferParameter)
-		//.set("getProgramParameter", glGetProgramParameter)
-		//.set("getProgramInfoLog", glGetProgramInfoLog)
+		.set("getProgramParameter", _glGetProgramParameter)
+		.set("getProgramInfoLog", _glGetProgramInfoLog)
 		//.set("getParameter", glGetParameter)
 		//.set("getFramebufferAttachmentParameter", glGetFramebufferAttachmentParameter)
 		//.set("getExtension", glGetExtension)

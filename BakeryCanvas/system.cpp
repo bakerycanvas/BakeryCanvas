@@ -42,14 +42,14 @@ namespace BKSystem {
 			levelFlag = MB_OK | MB_ICONERROR;
 		}
 		//utf8 -> unicode16
-		int wlen1 = MultiByteToWideChar(CP_UTF8, 0, title, 0, NULL, 0);
+		int wlen1 = MultiByteToWideChar(CP_UTF8, 0, title, -1, NULL, 0);
 		wchar_t *wtitle = (wchar_t*)malloc(sizeof(wchar_t) * (wlen1 + 1));
-		MultiByteToWideChar(CP_UTF8, 0, title, 0, wtitle, wlen1);
+		MultiByteToWideChar(CP_UTF8, 0, title, -1, wtitle, wlen1);
 		wtitle[wlen1] = 0;
-		int wlen2 = MultiByteToWideChar(CP_UTF8, 0, content, 0, NULL, 0);
+		int wlen2 = MultiByteToWideChar(CP_UTF8, 0, content, -1, NULL, 0);
 		wchar_t *wcontent = (wchar_t*)malloc(sizeof(wchar_t) * (wlen2 + 1));
-		MultiByteToWideChar(CP_UTF8, 0, content, 0, wcontent, wlen2);
-		wcontent[wlen1] = 0;
+		MultiByteToWideChar(CP_UTF8, 0, content, -1, wcontent, wlen2);
+		wcontent[wlen2] = 0;
 		MessageBox(NULL, wcontent, wtitle, levelFlag);
 		free(wtitle);
 		free(wcontent);
