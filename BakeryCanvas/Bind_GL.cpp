@@ -240,6 +240,54 @@ void _glUniform1fv(WebGLUniformLocation &location, const std::vector<GLfloat> &a
 	glUniform1fv(location.location, array.size(), array.data());
 }
 
+void _glUniform1i(WebGLUniformLocation &location, GLint v0)
+{
+	CHECK_VALID(location);
+	glUniform1i(location.location, v0);
+}
+
+void _glUniform2i(WebGLUniformLocation &location, GLint v0, GLint v1)
+{
+	CHECK_VALID(location);
+	glUniform2i(location.location, v0, v1);
+}
+
+void _glUniform3i(WebGLUniformLocation &location, GLint v0, GLint v1, GLint v2)
+{
+	CHECK_VALID(location);
+	glUniform3i(location.location, v0, v1, v2);
+}
+
+void _glUniform4i(WebGLUniformLocation &location, GLint v0, GLint v1, GLint v2, GLint v3)
+{
+	CHECK_VALID(location);
+	glUniform4i(location.location, v0, v1, v2, v3);
+}
+
+void _glUniform1f(WebGLUniformLocation &location, GLfloat v0)
+{
+	CHECK_VALID(location);
+	glUniform1f(location.location, v0);
+}
+
+void _glUniform2f(WebGLUniformLocation &location, GLfloat v0, GLfloat v1)
+{
+	CHECK_VALID(location);
+	glUniform2f(location.location, v0, v1);
+}
+
+void _glUniform3f(WebGLUniformLocation &location, GLfloat v0, GLfloat v1, GLfloat v2)
+{
+	CHECK_VALID(location);
+	glUniform3f(location.location, v0, v1, v2);
+}
+
+void _glUniform4f(WebGLUniformLocation &location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3)
+{
+	CHECK_VALID(location);
+	glUniform4f(location.location, v0, v1, v2, v3);
+}
+
 void _glDrawElements(GLenum mode, GLsizei count, GLenum type, intptr_t indices)
 {
 	glDrawElements(mode, count, type, (const void*)indices);
@@ -615,21 +663,21 @@ void Bind_GL(v8::Isolate * iso)
 		.set("uniformMatrix3fv", _glUniformMatrix3fv)
 		.set("uniformMatrix2fv", _glUniformMatrix2fv)
 		.set("uniform4iv", _glUniform4iv)
-		.set("uniform4i", glUniform4i)
+		.set("uniform4i", _glUniform4i)
 		.set("uniform4fv", _glUniform4fv)
-		.set("uniform4f", glUniform4f)
+		.set("uniform4f", _glUniform4f)
 		.set("uniform3iv", _glUniform3iv)
-		.set("uniform3i", glUniform3i)
+		.set("uniform3i", _glUniform3i)
 		.set("uniform3fv", _glUniform3fv)
-		.set("uniform3f", glUniform3f)
+		.set("uniform3f", _glUniform3f)
 		.set("uniform2iv", _glUniform2iv)
-		.set("uniform2i", glUniform2i)
+		.set("uniform2i", _glUniform2i)
 		.set("uniform2fv", _glUniform2fv)
-		.set("uniform2f", glUniform2f)
+		.set("uniform2f", _glUniform2f)
 		.set("uniform1iv", _glUniform1iv)
-		.set("uniform1i", glUniform1i)
+		.set("uniform1i", _glUniform1i)
 		.set("uniform1fv", _glUniform1fv)
-		.set("uniform1f", glUniform1f)
+		.set("uniform1f", _glUniform1f)
 		.set("texParameteri", glTexParameteri)
 		.set("texImage2D", _glTexImage2D)
 		.set("shaderSource", _glShaderSource)
