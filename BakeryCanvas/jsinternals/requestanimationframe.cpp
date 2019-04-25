@@ -58,7 +58,7 @@ namespace BKJSInternals {
       }
       v8::HandleScope scope(isolate);
       v8::Local<v8::Function> callback = v8::Local<v8::Function>::New(isolate, *(item->callbackFunc));
-      v8pp::call_v8(isolate, callback, isolate->GetCurrentContext()->Global());
+      v8pp::call_v8(isolate, callback, isolate->GetCurrentContext()->Global(), (double)clock() / CLOCKS_PER_SEC * 1000);
       item->callbackFunc->SetWeak();
       free(item);
     }

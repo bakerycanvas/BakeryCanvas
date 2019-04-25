@@ -16,6 +16,7 @@
 #include <set>
 
 #include "queue/queue.h"
+#include <time.h>
 
 namespace BKJSInternals {
   int64_t requestAnimationFrame(v8::Local<v8::Function> callback);

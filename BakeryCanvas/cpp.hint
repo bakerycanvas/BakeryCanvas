@@ -1,1 +1,2 @@
 #define BIND_FUNCTION static
+#define ADD_CONST(x) ;

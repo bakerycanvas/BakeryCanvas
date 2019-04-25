@@ -415,7 +415,7 @@ struct convert<std::vector<T, Alloc>>
 
 	static bool is_valid(v8::Isolate*, v8::Local<v8::Value> value)
 	{
-		return !value.IsEmpty() && value->IsArray();
+		return !value.IsEmpty() && (value->IsArray() || value->IsArrayBuffer() || value->IsArrayBufferView());
 	}
 
 	static from_type from_v8(v8::Isolate* isolate, v8::Local<v8::Value> value)
@@ -424,16 +424,53 @@ struct convert<std::vector<T, Alloc>>
 		{
 			throw invalid_argument(isolate, value, "Array");
 		}
-
-		v8::HandleScope scope(isolate);
-		v8::Local<v8::Context> context = isolate->GetCurrentContext();
-		v8::Local<v8::Array> array = value.As<v8::Array>();
-
 		from_type result;
-		result.reserve(array->Length());
-		for (uint32_t i = 0, count = array->Length(); i < count; ++i)
+		v8::HandleScope scope(isolate);
+		if (value->IsArray())
 		{
-			result.emplace_back(convert<T>::from_v8(isolate, array->Get(context, i).ToLocalChecked()));
+			v8::Local<v8::Context> context = isolate->GetCurrentContext();
+			v8::Local<v8::Array> array = value.As<v8::Array>();
+
+			result.reserve(array->Length());
+			for (uint32_t i = 0, count = array->Length(); i < count; ++i)
+			{
+				result.emplace_back(convert<T>::from_v8(isolate, array->Get(context, i).ToLocalChecked()));
+			}
+		}
+		else if (value->IsArrayBuffer())
+		{
+			v8::Local<v8::ArrayBuffer> array = value.As<v8::ArrayBuffer>();
+			int count = array->ByteLength() / sizeof(T);
+			result.reserve(count);
+			T* data = (T*)array->GetContents().AllocationBase();
+			for (int i = 0; i < count; i++)
+			{
+				result.emplace_back(data[i]);
+			}
+		}
+		else if (value->IsArrayBufferView())
+		{
+			v8::Local<v8::ArrayBufferView> array = value.As<v8::ArrayBufferView>();
+			if (array->HasBuffer())
+			{
+				auto content = array->Buffer()->GetContents();
+				int count = content.AllocationLength() / sizeof(T);
+				T* data = (T*)content.AllocationBase();
+				for (int i = 0; i < count; i++)
+				{
+					result.emplace_back(data[i]);
+				}
+			}
+			else
+			{
+				int count = array->ByteLength() / sizeof(T);
+				std::unique_ptr<T[]> data = std::make_unique<T[]>(count);
+				array->CopyContents(data.get(), count * sizeof(T));
+				for (int i = 0; i < count; i++)
+				{
+					result.emplace_back(data[i]);
+				}
+			}
 		}
 		return result;
 	}

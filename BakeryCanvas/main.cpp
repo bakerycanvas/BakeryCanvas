@@ -1,4 +1,4 @@
-// Copyright 2015 the V8 project authors. All rights reserved.
+﻿// Copyright 2015 the V8 project authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 #include <glad/glad.h>
@@ -66,8 +66,15 @@ GLFWwindow* InitWindow(int width = 800, int height = 600, const char* title = "B
     return window;
 }
 
+extern GLenum _glGetError();
+
 void mainLoop(uv_idle_t* handle) {
     if (!glfwWindowShouldClose(window)) {
+		int v = _glGetError();
+		if (v != GL_NO_ERROR)
+		{
+			printf("OpenGL error %x\n", v);
+		}
         glfwSwapBuffers(window);
         glClear(GL_COLOR_BUFFER_BIT);
         glfwPollEvents();
@@ -100,7 +107,16 @@ void V8RunScript(v8::Local<v8::Context> v8_main_context, std::string scriptsrc, 
     v8::Local<v8::Script> script = maybescript.ToLocalChecked();
     v8::MaybeLocal<v8::Value> result = script->Run(v8_main_context);
     if (result.IsEmpty()) {
-        v8::Local<v8::Value> exception = tryHandler.StackTrace(v8_main_context).ToLocalChecked();
+		v8::MaybeLocal<v8::Value> maybe_exception = tryHandler.StackTrace(v8_main_context);
+		v8::Local<v8::Value> exception;
+		if (maybe_exception.IsEmpty())
+		{
+			exception = tryHandler.Exception();
+		}
+		else
+		{
+			exception = maybe_exception.ToLocalChecked();
+		}
         v8::String::Utf8Value exception_utf8(isolate, exception);
         exceptionstr = *exception_utf8;
         resultstr.clear();
@@ -148,8 +164,11 @@ int main(int argc, char* argv[]) {
     std::string exceptionFilename;
 
     if (filename.empty()) {
-        V8RunScript(v8_main_context, "WebGLTexture", result, exception);
-    } else {
+        V8RunScript(v8_main_context, "var s=gl.createShader(gl.VERTEX_SHADER);gl.getShaderParameter(s,0)", result, exception);
+		if (result.length() > 0) {
+			printf("result:%s\n", result.c_str());
+		}
+	} else {
         // get current working directory
         std::string cwd = filename.substr(0, filename.find_last_of('/'));
         std::ifstream entryFile;
@@ -201,13 +220,10 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    // if (result.length() > 0) {
-    // 	printf("result:%s\n", result.c_str());
-    // }
-
     if (exception.length() > 0) {
         BKSystem::showMessage("Bakery Canvas Exception", (exceptionFilename + "\n" + exception).c_str(), BKSystem::MessageLevel::ERROR);
         printf("Uncaught exception:\n%s", exception.c_str());
+		system("pause");
     } else {
         uv_idle_t mainloop_handle;
         uv_idle_init(uv_default_loop(), &mainloop_handle);
