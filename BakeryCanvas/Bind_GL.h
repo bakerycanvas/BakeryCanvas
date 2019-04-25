@@ -18,6 +18,7 @@
 #include <string>
 #include <vector>
 #include <set>
+#include <regex>
 
 //define extra webGL macro
 #define GL_IMPLEMENTATION_COLOR_READ_TYPE 0x8B9A
@@ -40,6 +41,8 @@
 #define GL_BROWSER_DEFAULT_WEBGL 0x9244
 
 void Bind_GL(v8::Isolate * iso);
+
+std::string mapShader(const char *src);
 
 class WebGLObject
 {

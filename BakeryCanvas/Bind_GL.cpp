@@ -40,66 +40,6 @@ void _glVertexAttrib2fv(GLuint index, intptr_t v)
 	glVertexAttrib2fv(index, (const GLfloat *)v);
 }
 
-void _glUniformMatrix4fv(GLint location, GLsizei count, bool transpose, intptr_t value)
-{
-	glUniformMatrix4fv(location, count, transpose, (const GLfloat *)value);
-}
-
-void _glUniformMatrix3fv(GLint location, GLsizei count, bool transpose, intptr_t value)
-{
-	glUniformMatrix3fv(location, count, transpose, (const GLfloat *)value);
-}
-
-void _glUniformMatrix2fv(GLint location, GLsizei count, bool transpose, intptr_t value)
-{
-	glUniformMatrix2fv(location, count, transpose, (const GLfloat *)value);
-}
-
-void _glUniform4iv(GLint location, GLsizei count, intptr_t value)
-{
-	glUniform4iv(location, count, (const GLint *)value);
-}
-
-void _glUniform3iv(GLint location, GLsizei count, intptr_t value)
-{
-	glUniform3iv(location, count, (const GLint *)value);
-}
-
-void _glUniform2iv(GLint location, GLsizei count, intptr_t value)
-{
-	glUniform2iv(location, count, (const GLint *)value);
-}
-
-void _glUniform1iv(GLint location, GLsizei count, intptr_t value)
-{
-	glUniform1iv(location, count, (const GLint *)value);
-}
-
-void _glUniform4fv(GLint location, GLsizei count, intptr_t value)
-{
-	glUniform4fv(location, count, (const GLfloat *)value);
-}
-
-void _glUniform3fv(GLint location, GLsizei count, intptr_t value)
-{
-	glUniform3fv(location, count, (const GLfloat *)value);
-}
-
-void _glUniform2fv(GLint location, GLsizei count, intptr_t value)
-{
-	glUniform2fv(location, count, (const GLfloat *)value);
-}
-
-void _glUniform1fv(GLint location, GLsizei count, intptr_t value)
-{
-	glUniform1fv(location, count, (const GLfloat *)value);
-}
-
-void _glDrawElements(GLenum mode, GLsizei count, GLenum type, intptr_t indices)
-{
-	glDrawElements(mode, count, type, (const void*)indices);
-}
-
 void _glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, intptr_t pixels)
 {
     glTexImage2D(target, level, internalformat, width, height, border, format, type, (void*)pixels);
@@ -221,6 +161,90 @@ v8::Local<v8::Value> glGetParameter(GLenum pname)
 #define CHECK_VALID_RETURN(x,ret) if(!x.isValid()){_glSetError(GL_INVALID_OPERATION);return (ret);}
 #define CHECK_VALID_RETURNNULL(x) CHECK_VALID_RETURN(x, v8::Null(v8::Isolate::GetCurrent()))
 
+#define CHECK_LENGTH(x, len) if(x.size() < len){throw std::length_error(#x " must has at least " #len " elements");}
+
+void _glUniformMatrix4fv(WebGLUniformLocation &location, bool transpose, const std::vector<GLfloat> &array)
+{
+	CHECK_VALID(location);
+	CHECK_LENGTH(array, 16);
+	glUniformMatrix4fv(location.location, array.size() / 16, transpose, array.data());
+}
+
+void _glUniformMatrix3fv(WebGLUniformLocation &location, bool transpose, const std::vector<GLfloat> &array)
+{
+	CHECK_VALID(location);
+	CHECK_LENGTH(array, 9);
+	glUniformMatrix3fv(location.location, array.size() / 9, transpose, array.data());
+}
+
+void _glUniformMatrix2fv(WebGLUniformLocation &location, bool transpose, const std::vector<GLfloat> &array)
+{
+	CHECK_VALID(location);
+	CHECK_LENGTH(array, 4);
+	glUniformMatrix2fv(location.location, array.size() / 4, transpose, array.data());
+}
+
+void _glUniform4iv(WebGLUniformLocation &location, const std::vector<GLint> &array)
+{
+	CHECK_VALID(location);
+	CHECK_LENGTH(array, 4);
+	glUniform4iv(location.location, array.size() / 4, array.data());
+}
+
+void _glUniform3iv(WebGLUniformLocation &location, const std::vector<GLint> &array)
+{
+	CHECK_VALID(location);
+	CHECK_LENGTH(array, 3);
+	glUniform4iv(location.location, array.size() / 3, array.data());
+}
+
+void _glUniform2iv(WebGLUniformLocation &location, const std::vector<GLint> &array)
+{
+	CHECK_VALID(location);
+	CHECK_LENGTH(array, 2);
+	glUniform4iv(location.location, array.size() / 2, array.data());
+}
+
+void _glUniform1iv(WebGLUniformLocation &location, const std::vector<GLint> &array)
+{
+	CHECK_VALID(location);
+	CHECK_LENGTH(array, 1);
+	glUniform4iv(location.location, array.size(), array.data());
+}
+
+void _glUniform4fv(WebGLUniformLocation &location, const std::vector<GLfloat> &array)
+{
+	CHECK_VALID(location);
+	CHECK_LENGTH(array, 4);
+	glUniform4fv(location.location, array.size() / 4, array.data());
+}
+
+void _glUniform3fv(WebGLUniformLocation &location, const std::vector<GLfloat> &array)
+{
+	CHECK_VALID(location);
+	CHECK_LENGTH(array, 3);
+	glUniform3fv(location.location, array.size() / 3, array.data());
+}
+
+void _glUniform2fv(WebGLUniformLocation &location, const std::vector<GLfloat> &array)
+{
+	CHECK_VALID(location);
+	CHECK_LENGTH(array, 2);
+	glUniform2fv(location.location, array.size() / 2, array.data());
+}
+
+void _glUniform1fv(WebGLUniformLocation &location, const std::vector<GLfloat> &array)
+{
+	CHECK_VALID(location);
+	CHECK_LENGTH(array, 1);
+	glUniform1fv(location.location, array.size(), array.data());
+}
+
+void _glDrawElements(GLenum mode, GLsizei count, GLenum type, intptr_t indices)
+{
+	glDrawElements(mode, count, type, (const void*)indices);
+}
+
 v8::Local<v8::Object> _glCreateTexture()
 {
 	auto texture = new WebGLTexture();
@@ -308,7 +332,8 @@ void _glDeleteBuffer(WebGLBuffer &buffer)
 void _glShaderSource(WebGLShader &shader, const std::string &source)
 {
 	CHECK_VALID(shader);
-	auto v = source.c_str();
+	auto s = mapShader(source.c_str());
+	const char *v = s.c_str();
 	glShaderSource(shader.shader, 1, &v, NULL);
 }
 
@@ -486,10 +511,9 @@ void _glBufferData(const v8::FunctionCallbackInfo<v8::Value>& args)
 		else
 		{
 			auto size = array->ByteLength();
-			char *data = (char*)malloc(size);
-			array->CopyContents(data, size);
-			glBufferData(target, size, data, usage);
-			free(data);
+			std::unique_ptr<char[]> data = std::make_unique<char[]>(size);
+			array->CopyContents(data.get(), size);
+			glBufferData(target, size, data.get(), usage);
 			return;
 		}
 	}
@@ -1129,4 +1153,10 @@ void Bind_GL(v8::Isolate * iso)
 		;
 
 	global->Set(v8pp::to_v8(iso, "gl"), module_GL.new_instance());
+}
+
+std::string mapShader(const char *src)
+{
+	static std::regex reg(R"(\blowp\b|\bhighp\b|\bmediump\b)", std::regex_constants::ECMAScript | std::regex_constants::optimize);
+	return std::regex_replace(src, reg, "", std::regex_constants::match_any);
 }

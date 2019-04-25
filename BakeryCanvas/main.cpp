@@ -66,8 +66,15 @@ GLFWwindow* InitWindow(int width = 800, int height = 600, const char* title = "B
     return window;
 }
 
+extern GLenum _glGetError();
+
 void mainLoop(uv_idle_t* handle) {
     if (!glfwWindowShouldClose(window)) {
+		int v = _glGetError();
+		if (v != GL_NO_ERROR)
+		{
+			printf("OpenGL error %x\n", v);
+		}
         glfwSwapBuffers(window);
         glClear(GL_COLOR_BUFFER_BIT);
         glfwPollEvents();
@@ -100,7 +107,16 @@ void V8RunScript(v8::Local<v8::Context> v8_main_context, std::string scriptsrc, 
     v8::Local<v8::Script> script = maybescript.ToLocalChecked();
     v8::MaybeLocal<v8::Value> result = script->Run(v8_main_context);
     if (result.IsEmpty()) {
-        v8::Local<v8::Value> exception = tryHandler.StackTrace(v8_main_context).ToLocalChecked();
+		v8::MaybeLocal<v8::Value> maybe_exception = tryHandler.StackTrace(v8_main_context);
+		v8::Local<v8::Value> exception;
+		if (maybe_exception.IsEmpty())
+		{
+			exception = tryHandler.Exception();
+		}
+		else
+		{
+			exception = maybe_exception.ToLocalChecked();
+		}
         v8::String::Utf8Value exception_utf8(isolate, exception);
         exceptionstr = *exception_utf8;
         resultstr.clear();

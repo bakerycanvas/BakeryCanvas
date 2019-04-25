@@ -1,13 +1,13 @@
 var squareRotation = 0.0;
-
+var alert=log;
 main();
 
 //
 // Start here
 //
 function main() {
-  const canvas = document.querySelector('#glcanvas');
-  const gl = canvas.getContext('webgl');
+  //const canvas = document.querySelector('#glcanvas');
+  //const gl = canvas.getContext('webgl');
 
   // If we don't have a GL context, give up now
 
@@ -42,7 +42,7 @@ function main() {
   // Initialize a shader program; this is where all the lighting
   // for the vertices and so forth is established.
   const shaderProgram = initShaderProgram(gl, vsSource, fsSource);
-
+log("finish program")
   // Collect all the info needed to use the shader program.
   // Look up which attributes our shader program is using
   // for aVertexPosition, aVevrtexColor and also
@@ -62,7 +62,7 @@ function main() {
   // Here's where we call the routine that builds all the
   // objects we'll be drawing.
   const buffers = initBuffers(gl);
-
+  log("finish buffer")
   var then = 0;
 
   // Draw the scene repeatedly
@@ -156,7 +156,8 @@ function drawScene(gl, programInfo, buffers, deltaTime) {
   // and 100 units away from the camera.
 
   const fieldOfView = (45 * Math.PI) / 180; // in radians
-  const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
+  //const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
+  const aspect = 4/3;
   const zNear = 0.1;
   const zFar = 100.0;
   const projectionMatrix = mat4.create();
@@ -190,30 +191,30 @@ function drawScene(gl, programInfo, buffers, deltaTime) {
     const numComponents = 2;
     const type = gl.FLOAT;
     const normalize = false;
-    const stride = 0;
+    const stride = 8;
     const offset = 0;
     gl.bindBuffer(gl.ARRAY_BUFFER, buffers.position);
     gl.vertexAttribPointer(programInfo.attribLocations.vertexPosition, numComponents, type, normalize, stride, offset);
     gl.enableVertexAttribArray(programInfo.attribLocations.vertexPosition);
   }
-
+ 
   // Tell WebGL how to pull out the colors from the color buffer
   // into the vertexColor attribute.
   {
     const numComponents = 4;
     const type = gl.FLOAT;
     const normalize = false;
-    const stride = 0;
+    const stride = 16;
     const offset = 0;
     gl.bindBuffer(gl.ARRAY_BUFFER, buffers.color);
     gl.vertexAttribPointer(programInfo.attribLocations.vertexColor, numComponents, type, normalize, stride, offset);
     gl.enableVertexAttribArray(programInfo.attribLocations.vertexColor);
   }
-
+  
   // Tell WebGL to use our program when drawing
 
   gl.useProgram(programInfo.program);
-
+ 
   // Set the shader uniforms
 
   gl.uniformMatrix4fv(programInfo.uniformLocations.projectionMatrix, false, projectionMatrix);
@@ -228,6 +229,7 @@ function drawScene(gl, programInfo, buffers, deltaTime) {
   // Update the rotation for the next draw
 
   squareRotation += deltaTime;
+
 }
 
 //
