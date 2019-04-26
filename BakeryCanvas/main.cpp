@@ -89,14 +89,15 @@ void deInitGLFW() {
 
 v8::Isolate* isolate;
 
-void V8RunScript(v8::Local<v8::Context> v8_main_context, std::string scriptsrc, std::string& resultstr, std::string& exceptionstr) {
+void V8RunScript(v8::Local<v8::Context> v8_main_context, const std::string &scriptsrc, const std::string &filename, std::string& resultstr, std::string& exceptionstr) {
     v8::Isolate::Scope isolate_scope(isolate);
     v8::HandleScope handle_scope(isolate);
     // v8::Local<v8::Context> context = v8::Context::New(isolate, NULL, v8_global);
     // v8::Context::Scope context_scope(context);
     v8::TryCatch tryHandler(isolate);
     v8::Local<v8::String> source = v8::String::NewFromUtf8(isolate, scriptsrc.c_str(), v8::NewStringType::kNormal).ToLocalChecked();
-    v8::MaybeLocal<v8::Script> maybescript = v8::Script::Compile(v8_main_context, source);
+    v8::ScriptOrigin origin(v8::String::NewFromUtf8(isolate, filename.c_str(), v8::NewStringType::kNormal).ToLocalChecked());
+    v8::MaybeLocal<v8::Script> maybescript = v8::Script::Compile(v8_main_context, source, !filename.empty() ? &origin : nullptr);
     if (maybescript.IsEmpty()) {
         v8::Local<v8::Value> exception = tryHandler.StackTrace(v8_main_context).ToLocalChecked();
         v8::String::Utf8Value exception_utf8(isolate, exception);
@@ -164,7 +165,7 @@ int main(int argc, char* argv[]) {
     std::string exceptionFilename;
 
     if (filename.empty()) {
-        V8RunScript(v8_main_context, "var s=gl.createShader(gl.VERTEX_SHADER);gl.getShaderParameter(s,0)", result, exception);
+        V8RunScript(v8_main_context, "var s=gl.createShader(gl.VERTEX_SHADER);gl.getShaderParameter(s,0)", "", result, exception);
 		if (result.length() > 0) {
 			printf("result:%s\n", result.c_str());
 		}
@@ -216,14 +217,15 @@ int main(int argc, char* argv[]) {
             std::ostringstream tmp;
             tmp << file.rdbuf();
             scriptText = tmp.str();
-            V8RunScript(v8_main_context, scriptText, result, exception);
+            V8RunScript(v8_main_context, scriptText, filename, result, exception);
         }
     }
 
     if (exception.length() > 0) {
-        BKSystem::showMessage("Bakery Canvas Exception", (exceptionFilename + "\n" + exception).c_str(), BKSystem::MessageLevel::ERROR);
-        printf("Uncaught exception:\n%s", exception.c_str());
-		system("pause");
+        // avoid stucked by large stack trace
+        auto safeExceptionString = exception.substr(0, 2048);
+        BKSystem::showMessage("Bakery Canvas Exception", (exceptionFilename + "\n" + safeExceptionString).c_str(), BKSystem::MessageLevel::ERROR);
+        printf("Uncaught exception:\n%s\n\n", safeExceptionString.c_str());
     } else {
         uv_idle_t mainloop_handle;
         uv_idle_init(uv_default_loop(), &mainloop_handle);

@@ -53,6 +53,7 @@ namespace BKSystem {
 		MessageBox(NULL, wcontent, wtitle, levelFlag);
 		free(wtitle);
 		free(wcontent);
+		system("pause");
 #endif
         return false;
     }
