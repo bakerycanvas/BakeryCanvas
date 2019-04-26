@@ -28,7 +28,7 @@ void main(void) {
 `;
 
 const shaderProgram = initShaderProgram(vsSource, fsSource);
-const attrib_loc = gl.getAttribLocation(shaderProgram, '_aPos');
+const attrib_loc = gl.getAttribLocation(shaderProgram, 'aPos');
 
 log("finish program");
 
