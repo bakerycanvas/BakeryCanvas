@@ -14,27 +14,37 @@ log("create buffer");
 
 // Vertex shader program
 const vsSource = `
-#version 330
-
-in vec3 aPos;
+attribute vec3 _aPos;
 void main(){
-(gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0));
+gl_Position = vec4(_aPos.x, _aPos.y, _aPos.z, 1.0);
 }
 `;
+// const vsSource = `
+// #version 330
+
+// in vec3 _uaPos;
+// void main(){
+// gl_Position = vec4(_uaPos.x, _uaPos.y, _uaPos.z, 1.0);
+// }
+// `;
 
 // Fragment shader program
-
 const fsSource = `
-#version 330
-
-out vec4 FragColor;
 void main(){
-(FragColor = vec4(1.0, 0.5, 0.2, 1.0));
+gl_FragColor = vec4(1.0, 0.5, 0.2, 1.0);
 }
 `;
+// const fsSource = `
+// #version 330
+// #extension GL_ARB_gpu_shader5 : enable
+// out vec4 webgl_FragColor;
+// void main(){
+// (webgl_FragColor = vec4(1.0, 0.5, 0.2, 1.0));
+// }
+// `;
 
 const shaderProgram = initShaderProgram(vsSource, fsSource);
-const attrib_loc = gl.getAttribLocation(shaderProgram, 'aPos');
+const attrib_loc = 0;//gl.getAttribLocation(shaderProgram, 'aPos');
 
 log("finish program");
 

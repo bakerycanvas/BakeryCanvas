@@ -1,5 +1,7 @@
 #include "Bind_GL.h"
 
+#include "translator.h"
+
 static GLenum inner_GLError = GL_NO_ERROR;
 static GLboolean use_InnerError = false;
 static GLboolean glContextLost = false;
@@ -332,7 +334,11 @@ void _glDeleteBuffer(WebGLBuffer &buffer)
 void _glShaderSource(WebGLShader &shader, const std::string &source)
 {
 	CHECK_VALID(shader);
-	auto s = mapShader(source.c_str());
+	int type;
+	glGetShaderiv(shader.shader, GL_SHADER_TYPE, &type);
+	//auto s = mapShader(source.c_str());
+	auto s = source;
+	s = BKShaderTranslator::translate(source, type);
 	const char *v = s.c_str();
 	glShaderSource(shader.shader, 1, &v, NULL);
 }

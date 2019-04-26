@@ -43,7 +43,7 @@ GLFWwindow* InitWindow(int width = 800, int height = 600, const char* title = "B
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 #ifdef WIN32
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
 #endif
 #ifdef __APPLE__
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -141,7 +141,7 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    BKShaderTranslator::translate(filename);
+    //BKShaderTranslator::translate(filename);
 
     printf("Bakery Canvas running...\n\n");
 
