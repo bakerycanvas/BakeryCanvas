@@ -42,7 +42,7 @@
 
 void Bind_GL(v8::Isolate * iso);
 
-std::string mapShader(const char *src);
+std::string mapShader(const char *src, GLenum shaderType);
 
 class WebGLObject
 {
@@ -116,6 +116,8 @@ class WebGLShader : public WebGLObject
 {
 public:
 	GLuint shader;
+	//cache shader type
+	GLenum type;
 
 	~WebGLShader()
 	{

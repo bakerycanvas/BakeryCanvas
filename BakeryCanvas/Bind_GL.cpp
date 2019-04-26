@@ -1,8 +1,12 @@
 #include "Bind_GL.h"
 
+static std::string variable_prefix = "";
+
 static GLenum inner_GLError = GL_NO_ERROR;
 static GLboolean use_InnerError = false;
 static GLboolean glContextLost = false;
+
+static GLuint default_VAO = 0;
 
 void _glSetError(GLenum error)
 {
@@ -29,23 +33,43 @@ bool _glIsContextLost()
 	return false;
 }
 
+#if defined(DEBUG) || defined(_DEBUG)
+#define CHECK_GL {auto x=glGetError();if(x!=0)printf("%s:%d, %04X\n", __FUNCTION__,__LINE__,x);}
+#else
+#define CHECK_GL
+#endif
+
+void initDefaultVAO()
+{
+	if (default_VAO == 0)
+	{
+		glGenVertexArrays(1, &default_VAO);
+		glBindVertexArray(default_VAO);
+	}
+}
+
 //use GLboolean will cause convert error in v8pp when giving a boolean in js
 void _glVertexAttribPointer(GLuint index, GLint size, GLenum type, bool normalized, GLsizei stride, intptr_t pointer)
 {
+	initDefaultVAO();
 	glVertexAttribPointer(index, size, type, normalized, stride, (const void*)pointer);
+	CHECK_GL;
 }
 
 void _glVertexAttrib2fv(GLuint index, intptr_t v)
 {
+	initDefaultVAO();
 	glVertexAttrib2fv(index, (const GLfloat *)v);
+	CHECK_GL;
 }
 
 void _glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, intptr_t pixels)
 {
     glTexImage2D(target, level, internalformat, width, height, border, format, type, (void*)pixels);
+	CHECK_GL;
 }
 
-v8::Local<v8::Value> glGetParameter(GLenum pname)
+v8::Local<v8::Value> _glGetParameter(GLenum pname)
 {
 	switch (pname)
 	{ 
@@ -94,7 +118,8 @@ v8::Local<v8::Value> glGetParameter(GLenum pname)
 		{
 			GLint value;
 			glGetIntegerv(pname, &value);
-            return v8::Int32::New(v8::Isolate::GetCurrent(), value);
+			CHECK_GL;
+			return v8::Int32::New(v8::Isolate::GetCurrent(), value);
 		}
 	case GL_MAX_VERTEX_UNIFORM_VECTORS:
 	case GL_MAX_VARYING_VECTORS:
@@ -103,7 +128,7 @@ v8::Local<v8::Value> glGetParameter(GLenum pname)
 	case GL_IMPLEMENTATION_COLOR_READ_TYPE:
 	case GL_UNPACK_COLORSPACE_CONVERSION_WEBGL:
 		//TODO
-        return v8::Int32::New(v8::Isolate::GetCurrent(), 0);
+        return v8::Null(v8::Isolate::GetCurrent());
 
 	//return uint
     case GL_STENCIL_BACK_VALUE_MASK:
@@ -113,6 +138,7 @@ v8::Local<v8::Value> glGetParameter(GLenum pname)
 		{
 			GLuint value;
 			glGetIntegerv(pname, (GLint *)&value);
+			CHECK_GL;
 			return v8::Uint32::New(v8::Isolate::GetCurrent(), value);
 		}
 	//return boolean
@@ -128,13 +154,14 @@ v8::Local<v8::Value> glGetParameter(GLenum pname)
 		{
 			GLboolean value;
 			glGetBooleanv(pname, &value);
+			CHECK_GL;
 			return v8::Boolean::New(v8::Isolate::GetCurrent(), value);
 		}
     case GL_UNPACK_FLIP_Y_WEBGL:
     case GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL:
 		{
 			//TODO
-			return v8::Boolean::New(v8::Isolate::GetCurrent(), false);
+			return v8::Null(v8::Isolate::GetCurrent());
 		}
 	//return float
     case GL_DEPTH_CLEAR_VALUE:
@@ -145,11 +172,19 @@ v8::Local<v8::Value> glGetParameter(GLenum pname)
 		{
 			GLfloat value;
 			glGetFloatv(pname, &value);
+			CHECK_GL;
 			return v8::Number::New(v8::Isolate::GetCurrent(), value);
 		}
 
+	case GL_VERSION:
+		return v8::String::NewFromUtf8(v8::Isolate::GetCurrent(), "WebGL 1.0");
+	case GL_SHADING_LANGUAGE_VERSION:
+		return v8::String::NewFromUtf8(v8::Isolate::GetCurrent(), "WebGL GLSL ES 1.0");
+	case GL_VENDOR:
+		return v8::String::NewFromUtf8(v8::Isolate::GetCurrent(), "Bakery");
+	case GL_RENDER:
+		return v8::String::NewFromUtf8(v8::Isolate::GetCurrent(), "WebGL 1.0 (OpenGL ES 2.0 Bakery Native OpenGL)");
 	}
-	
 	_glSetError(GL_INVALID_ENUM);
 	return v8::Null(v8::Isolate::GetCurrent());
 }
@@ -168,6 +203,7 @@ void _glUniformMatrix4fv(WebGLUniformLocation &location, bool transpose, const s
 	CHECK_VALID(location);
 	CHECK_LENGTH(array, 16);
 	glUniformMatrix4fv(location.location, array.size() / 16, transpose, array.data());
+	CHECK_GL;
 }
 
 void _glUniformMatrix3fv(WebGLUniformLocation &location, bool transpose, const std::vector<GLfloat> &array)
@@ -175,6 +211,7 @@ void _glUniformMatrix3fv(WebGLUniformLocation &location, bool transpose, const s
 	CHECK_VALID(location);
 	CHECK_LENGTH(array, 9);
 	glUniformMatrix3fv(location.location, array.size() / 9, transpose, array.data());
+	CHECK_GL;
 }
 
 void _glUniformMatrix2fv(WebGLUniformLocation &location, bool transpose, const std::vector<GLfloat> &array)
@@ -182,6 +219,7 @@ void _glUniformMatrix2fv(WebGLUniformLocation &location, bool transpose, const s
 	CHECK_VALID(location);
 	CHECK_LENGTH(array, 4);
 	glUniformMatrix2fv(location.location, array.size() / 4, transpose, array.data());
+	CHECK_GL;
 }
 
 void _glUniform4iv(WebGLUniformLocation &location, const std::vector<GLint> &array)
@@ -189,6 +227,7 @@ void _glUniform4iv(WebGLUniformLocation &location, const std::vector<GLint> &arr
 	CHECK_VALID(location);
 	CHECK_LENGTH(array, 4);
 	glUniform4iv(location.location, array.size() / 4, array.data());
+	CHECK_GL;
 }
 
 void _glUniform3iv(WebGLUniformLocation &location, const std::vector<GLint> &array)
@@ -196,6 +235,7 @@ void _glUniform3iv(WebGLUniformLocation &location, const std::vector<GLint> &arr
 	CHECK_VALID(location);
 	CHECK_LENGTH(array, 3);
 	glUniform4iv(location.location, array.size() / 3, array.data());
+	CHECK_GL;
 }
 
 void _glUniform2iv(WebGLUniformLocation &location, const std::vector<GLint> &array)
@@ -203,6 +243,7 @@ void _glUniform2iv(WebGLUniformLocation &location, const std::vector<GLint> &arr
 	CHECK_VALID(location);
 	CHECK_LENGTH(array, 2);
 	glUniform4iv(location.location, array.size() / 2, array.data());
+	CHECK_GL;
 }
 
 void _glUniform1iv(WebGLUniformLocation &location, const std::vector<GLint> &array)
@@ -210,6 +251,7 @@ void _glUniform1iv(WebGLUniformLocation &location, const std::vector<GLint> &arr
 	CHECK_VALID(location);
 	CHECK_LENGTH(array, 1);
 	glUniform4iv(location.location, array.size(), array.data());
+	CHECK_GL;
 }
 
 void _glUniform4fv(WebGLUniformLocation &location, const std::vector<GLfloat> &array)
@@ -217,6 +259,7 @@ void _glUniform4fv(WebGLUniformLocation &location, const std::vector<GLfloat> &a
 	CHECK_VALID(location);
 	CHECK_LENGTH(array, 4);
 	glUniform4fv(location.location, array.size() / 4, array.data());
+	CHECK_GL;
 }
 
 void _glUniform3fv(WebGLUniformLocation &location, const std::vector<GLfloat> &array)
@@ -224,6 +267,7 @@ void _glUniform3fv(WebGLUniformLocation &location, const std::vector<GLfloat> &a
 	CHECK_VALID(location);
 	CHECK_LENGTH(array, 3);
 	glUniform3fv(location.location, array.size() / 3, array.data());
+	CHECK_GL;
 }
 
 void _glUniform2fv(WebGLUniformLocation &location, const std::vector<GLfloat> &array)
@@ -231,6 +275,7 @@ void _glUniform2fv(WebGLUniformLocation &location, const std::vector<GLfloat> &a
 	CHECK_VALID(location);
 	CHECK_LENGTH(array, 2);
 	glUniform2fv(location.location, array.size() / 2, array.data());
+	CHECK_GL;
 }
 
 void _glUniform1fv(WebGLUniformLocation &location, const std::vector<GLfloat> &array)
@@ -238,65 +283,76 @@ void _glUniform1fv(WebGLUniformLocation &location, const std::vector<GLfloat> &a
 	CHECK_VALID(location);
 	CHECK_LENGTH(array, 1);
 	glUniform1fv(location.location, array.size(), array.data());
+	CHECK_GL;
 }
 
 void _glUniform1i(WebGLUniformLocation &location, GLint v0)
 {
 	CHECK_VALID(location);
 	glUniform1i(location.location, v0);
+	CHECK_GL;
 }
 
 void _glUniform2i(WebGLUniformLocation &location, GLint v0, GLint v1)
 {
 	CHECK_VALID(location);
 	glUniform2i(location.location, v0, v1);
+	CHECK_GL;
 }
 
 void _glUniform3i(WebGLUniformLocation &location, GLint v0, GLint v1, GLint v2)
 {
 	CHECK_VALID(location);
 	glUniform3i(location.location, v0, v1, v2);
+	CHECK_GL;
 }
 
 void _glUniform4i(WebGLUniformLocation &location, GLint v0, GLint v1, GLint v2, GLint v3)
 {
 	CHECK_VALID(location);
 	glUniform4i(location.location, v0, v1, v2, v3);
+	CHECK_GL;
 }
 
 void _glUniform1f(WebGLUniformLocation &location, GLfloat v0)
 {
 	CHECK_VALID(location);
 	glUniform1f(location.location, v0);
+	CHECK_GL;
 }
 
 void _glUniform2f(WebGLUniformLocation &location, GLfloat v0, GLfloat v1)
 {
 	CHECK_VALID(location);
 	glUniform2f(location.location, v0, v1);
+	CHECK_GL;
 }
 
 void _glUniform3f(WebGLUniformLocation &location, GLfloat v0, GLfloat v1, GLfloat v2)
 {
 	CHECK_VALID(location);
 	glUniform3f(location.location, v0, v1, v2);
+	CHECK_GL;
 }
 
 void _glUniform4f(WebGLUniformLocation &location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3)
 {
 	CHECK_VALID(location);
 	glUniform4f(location.location, v0, v1, v2, v3);
+	CHECK_GL;
 }
 
 void _glDrawElements(GLenum mode, GLsizei count, GLenum type, intptr_t indices)
 {
 	glDrawElements(mode, count, type, (const void*)indices);
+	CHECK_GL;
 }
 
 v8::Local<v8::Object> _glCreateTexture()
 {
 	auto texture = new WebGLTexture();
 	glGenTextures(1, &texture->textureID);
+	CHECK_GL;
 	return v8pp::class_<WebGLTexture>::import_external(v8::Isolate::GetCurrent(), texture);
 }
 
@@ -304,6 +360,7 @@ void _glDeleteTexture(WebGLTexture &texture)
 {
 	CHECK_VALID(texture);
 	glDeleteTextures(1, &texture.textureID);
+	CHECK_GL;
 	texture.Invalidate();
 }
 
@@ -311,6 +368,7 @@ v8::Local<v8::Object> _glCreateProgram()
 {
 	auto program = new WebGLProgram();
 	program->program = glCreateProgram();
+	CHECK_GL;
 	return v8pp::class_<WebGLProgram>::import_external(v8::Isolate::GetCurrent(), program);
 }
 
@@ -318,6 +376,7 @@ void _glDeleteProgram(WebGLProgram &program)
 {
 	CHECK_VALID(program);
 	glDeleteProgram(program.program);
+	CHECK_GL;
 	program.Invalidate();
 }
 
@@ -325,6 +384,8 @@ v8::Local<v8::Object> _glCreateShader(GLenum type)
 {
 	auto shader = new WebGLShader();
 	shader->shader = glCreateShader(type);
+	shader->type = type;
+	CHECK_GL;
 	return v8pp::class_<WebGLShader>::import_external(v8::Isolate::GetCurrent(), shader);
 }
 
@@ -332,6 +393,7 @@ void _glDeleteShader(WebGLShader &shader)
 {
 	CHECK_VALID(shader);
 	glDeleteShader(shader.shader);
+	CHECK_GL;
 	shader.Invalidate();
 }
 
@@ -339,6 +401,7 @@ v8::Local<v8::Object> _glCreateRenderbuffer()
 {
 	auto rbo = new WebGLRenderbuffer();
 	glGenRenderbuffers(1, &rbo->rbo);
+	CHECK_GL;
 	return v8pp::class_<WebGLRenderbuffer>::import_external(v8::Isolate::GetCurrent(), rbo);
 }
 
@@ -346,6 +409,7 @@ void _glDeleteRenderbuffer(WebGLRenderbuffer &rbo)
 {
 	CHECK_VALID(rbo);
 	glDeleteRenderbuffers(1, &rbo.rbo);
+	CHECK_GL;
 	rbo.Invalidate();
 }
 
@@ -353,6 +417,7 @@ v8::Local<v8::Object> _glCreateFramebuffer()
 {
 	auto fbo = new WebGLFramebuffer();
 	glGenFramebuffers(1, &fbo->fbo);
+	CHECK_GL;
 	return v8pp::class_<WebGLFramebuffer>::import_external(v8::Isolate::GetCurrent(), fbo);
 }
 
@@ -360,6 +425,7 @@ void _glDeleteFramebuffer(WebGLFramebuffer &fbo)
 {
 	CHECK_VALID(fbo);
 	glDeleteFramebuffers(1, &fbo.fbo);
+	CHECK_GL;
 	fbo.Invalidate();
 }
 
@@ -367,6 +433,7 @@ v8::Local<v8::Object> _glCreateBuffer()
 {
 	auto buffer = new WebGLBuffer();
 	glGenBuffers(1, &buffer->buffer);
+	CHECK_GL;
 	return v8pp::class_<WebGLBuffer>::import_external(v8::Isolate::GetCurrent(), buffer);
 }
 
@@ -374,45 +441,52 @@ void _glDeleteBuffer(WebGLBuffer &buffer)
 {
 	CHECK_VALID(buffer);
 	glDeleteBuffers(1, &buffer.buffer);
+	CHECK_GL;
 	buffer.Invalidate();
 }
 
 void _glShaderSource(WebGLShader &shader, const std::string &source)
 {
 	CHECK_VALID(shader);
-	auto s = mapShader(source.c_str());
+	auto s = mapShader(source.c_str(), shader.type);
 	const char *v = s.c_str();
 	glShaderSource(shader.shader, 1, &v, NULL);
+	CHECK_GL;
 }
 
 void _glCompileShader(WebGLShader &shader)
 {
 	CHECK_VALID(shader);
 	glCompileShader(shader.shader);
+	CHECK_GL;
 }
 
 void _glAttachShader(WebGLProgram &program, WebGLShader &shader)
 {
 	CHECK_VALID2(program, shader);
 	glAttachShader(program.program, shader.shader);
+	CHECK_GL;
 }
 
 void _glDetachShader(WebGLProgram &program, WebGLShader &shader)
 {
 	CHECK_VALID2(program, shader);
 	glDetachShader(program.program, shader.shader);
+	CHECK_GL;
 }
 
 void _glLinkProgram(WebGLProgram &program)
 {
 	CHECK_VALID(program);
 	glLinkProgram(program.program);
+	CHECK_GL;
 }
 
 void _glUseProgram(WebGLProgram &program)
 {
 	CHECK_VALID(program);
 	glUseProgram(program.program);
+	CHECK_GL;
 }
 
 v8::Local<v8::Value> _glGetShaderParameter(WebGLShader &shader, GLenum pname)
@@ -423,10 +497,12 @@ v8::Local<v8::Value> _glGetShaderParameter(WebGLShader &shader, GLenum pname)
 	{
 	case GL_SHADER_TYPE:
 		glGetShaderiv(shader.shader, pname, &res);
+		CHECK_GL;
 		return v8::Int32::New(v8::Isolate::GetCurrent(), res);
 	case GL_DELETE_STATUS:
 	case GL_COMPILE_STATUS:
 		glGetShaderiv(shader.shader, pname, &res);
+		CHECK_GL;
 		return v8::Boolean::New(v8::Isolate::GetCurrent(), res);
 	}
 	_glSetError(GL_INVALID_ENUM);
@@ -438,8 +514,10 @@ v8::Local<v8::Value> _glGetShaderInfoLog(WebGLShader &shader)
 	CHECK_VALID_RETURNNULL(shader);
 	GLint len;
 	glGetShaderiv(shader.shader, GL_INFO_LOG_LENGTH, &len);
+	CHECK_GL;
 	GLchar *buf = (GLchar*)malloc(len);
 	glGetShaderInfoLog(shader.shader, len, &len, buf);
+	CHECK_GL;
 	auto res = v8::String::NewFromUtf8(v8::Isolate::GetCurrent(), buf);
 	free(buf);
 	return res;
@@ -455,11 +533,13 @@ v8::Local<v8::Value> _glGetProgramParameter(WebGLProgram &program, GLenum pname)
 	case GL_LINK_STATUS:
 	case GL_VALIDATE_STATUS:
 		glGetProgramiv(program.program, pname, &res);
+		CHECK_GL;
 		return v8::Boolean::New(v8::Isolate::GetCurrent(), res);
 	case GL_ATTACHED_SHADERS:
 	case GL_ACTIVE_ATTRIBUTES:
 	case GL_ACTIVE_UNIFORMS:
 		glGetProgramiv(program.program, pname, &res);
+		CHECK_GL;
 		return v8::Int32::New(v8::Isolate::GetCurrent(), res);
 	}
 	_glSetError(GL_INVALID_ENUM);
@@ -471,8 +551,10 @@ v8::Local<v8::Value> _glGetProgramInfoLog(WebGLProgram &program)
 	CHECK_VALID_RETURNNULL(program);
 	GLint len;
 	glGetProgramiv(program.program, GL_INFO_LOG_LENGTH, &len);
+	CHECK_GL;
 	GLchar *buf = (GLchar*)malloc(len);
 	glGetProgramInfoLog(program.program, len, &len, buf);
+	CHECK_GL;
 	auto res = v8::String::NewFromUtf8(v8::Isolate::GetCurrent(), buf);
 	free(buf);
 	return res;
@@ -517,6 +599,7 @@ void _glBufferData(const v8::FunctionCallbackInfo<v8::Value>& args)
 				if (length <= 0)
 					length = content.ByteLength();
 				glBufferData(target, length, (char*)content.Data() + srcOffset, usage);
+				CHECK_GL;
 				return;
 			}
 		}
@@ -538,6 +621,7 @@ void _glBufferData(const v8::FunctionCallbackInfo<v8::Value>& args)
 	{
 		GLsizeiptr size = v8pp::from_v8<GLsizeiptr>(v8::Isolate::GetCurrent(), args[1]);
 		glBufferData(target, size, NULL, usage);
+		CHECK_GL;
 		return;
 	}
 	if (!args[1].IsEmpty() && args[1]->IsArrayBuffer())
@@ -545,6 +629,7 @@ void _glBufferData(const v8::FunctionCallbackInfo<v8::Value>& args)
 		v8::Local<v8::ArrayBuffer> array = args[1].As<v8::ArrayBuffer>();
 		auto content = array->GetContents();
 		glBufferData(target, content.ByteLength(), content.Data(), usage);
+		CHECK_GL;
 		return;
 	}
 	if (!args[1].IsEmpty() && args[1]->IsArrayBufferView())
@@ -554,6 +639,7 @@ void _glBufferData(const v8::FunctionCallbackInfo<v8::Value>& args)
 		{
 			auto content = array->Buffer()->GetContents();
 			glBufferData(target, content.ByteLength(), content.Data(), usage);
+			CHECK_GL;
 			return;
 		}
 		else
@@ -562,6 +648,7 @@ void _glBufferData(const v8::FunctionCallbackInfo<v8::Value>& args)
 			std::unique_ptr<char[]> data = std::make_unique<char[]>(size);
 			array->CopyContents(data.get(), size);
 			glBufferData(target, size, data.get(), usage);
+			CHECK_GL;
 			return;
 		}
 	}
@@ -572,12 +659,15 @@ void _glBindBuffer(GLenum target, WebGLBuffer &buffer)
 {
 	CHECK_VALID(buffer);
 	glBindBuffer(target, buffer.buffer);
+	CHECK_GL;
 }
 
 GLint _glGetAttribLocation(WebGLProgram &program, const std::string name)
 {
 	CHECK_VALID_RETURN(program, -1);
-	return glGetAttribLocation(program.program, name.c_str());
+	GLint res = glGetAttribLocation(program.program, (variable_prefix + name).c_str());
+	CHECK_GL;
+	return res;
 }
 
 v8::Local<v8::Value> _glGetUniformLocation(WebGLProgram &program, const std::string name)
@@ -592,7 +682,8 @@ v8::Local<v8::Value> _glGetUniformLocation(WebGLProgram &program, const std::str
 		_glSetError(GL_INVALID_VALUE);
 		return v8::Null(v8::Isolate::GetCurrent());
 	}
-	GLint loc = glGetUniformLocation(program.program, name.c_str());
+	GLint loc = glGetUniformLocation(program.program, (variable_prefix + name).c_str());
+	CHECK_GL;
 	if (loc == -1)
 	{
 		return v8::Null(v8::Isolate::GetCurrent());
@@ -654,137 +745,156 @@ void Bind_GL(v8::Isolate * iso)
 	);
 
 	v8pp::module module_GL(iso);
-	module_GL//.set("test", &gl::test)
-		.set("viewport", glViewport)
-		.set("vertexAttribPointer", _glVertexAttribPointer)
-		.set("vertexAttrib2fv", _glVertexAttrib2fv)
-		.set("useProgram", _glUseProgram)
-		.set("uniformMatrix4fv", _glUniformMatrix4fv)
-		.set("uniformMatrix3fv", _glUniformMatrix3fv)
-		.set("uniformMatrix2fv", _glUniformMatrix2fv)
-		.set("uniform4iv", _glUniform4iv)
-		.set("uniform4i", _glUniform4i)
-		.set("uniform4fv", _glUniform4fv)
-		.set("uniform4f", _glUniform4f)
-		.set("uniform3iv", _glUniform3iv)
-		.set("uniform3i", _glUniform3i)
-		.set("uniform3fv", _glUniform3fv)
-		.set("uniform3f", _glUniform3f)
-		.set("uniform2iv", _glUniform2iv)
-		.set("uniform2i", _glUniform2i)
-		.set("uniform2fv", _glUniform2fv)
-		.set("uniform2f", _glUniform2f)
-		.set("uniform1iv", _glUniform1iv)
-		.set("uniform1i", _glUniform1i)
-		.set("uniform1fv", _glUniform1fv)
-		.set("uniform1f", _glUniform1f)
-		.set("texParameteri", glTexParameteri)
-		.set("texImage2D", _glTexImage2D)
-		.set("shaderSource", _glShaderSource)
-		.set("scissor", glScissor)
-		.set("renderbufferStorage", glRenderbufferStorage)
-		.set("pixelStorei", glPixelStorei)
-		.set("linkProgram", _glLinkProgram)
-		.set("lineWidth", glLineWidth)
-		.set("getUniformLocation", _glGetUniformLocation)
-		.set("getShaderParameter", _glGetShaderParameter)
-		.set("getAttribLocation", _glGetAttribLocation)
-		.set("generateMipmap", glGenerateMipmap)
-		.set("frontFace", glFrontFace)
-		.set("framebufferTexture2D", glFramebufferTexture2D)
-		.set("flush", glFlush)
-		.set("enableVertexAttribArray", glEnableVertexAttribArray)
-		.set("enable", glEnable)
-		.set("drawElements", _glDrawElements)
-		.set("disableVertexAttribArray", glDisableVertexAttribArray)
-		.set("disable", glDisable)
-		.set("depthMask", glDepthMask)
-		.set("depthFunc", glDepthFunc)
-		.set("deleteTexture", _glDeleteTexture)
-		.set("deleteShader", _glDeleteShader)
-		.set("deleteRenderbuffer", _glDeleteRenderbuffer)
-		.set("deleteProgram", _glDeleteProgram)
-		.set("deleteFramebuffer", _glDeleteFramebuffer)
-		.set("deleteBuffer", _glDeleteBuffer)
-		.set("cullFace", glCullFace)
-		.set("createTexture", _glCreateTexture)
-		.set("createShader", _glCreateShader)
-		.set("createRenderbuffer", _glCreateRenderbuffer)
-		.set("createProgram", _glCreateProgram)
-		.set("createFramebuffer", _glCreateFramebuffer)
-		.set("createBuffer", _glCreateBuffer)
-		.set("compileShader", _glCompileShader)
-		.set("colorMask", glColorMask)
-		.set("clearStencil", glClearStencil)
-		.set("clearDepth", glClearDepth)
-		.set("clearColor", glClearColor)
-		.set("clear", glClear)
-		.set("bufferData", _glBufferData)
-		.set("blendFuncSeparate", glBlendFuncSeparate)
-		.set("blendFunc", glBlendFunc)
-		.set("blendEquationSeparate", glBlendEquationSeparate)
-		.set("blendEquation", glBlendEquation)
-		.set("bindRenderbuffer", glBindRenderbuffer)
-		.set("bindFramebuffer", glBindFramebuffer)
-		.set("bindBuffer", _glBindBuffer)
-		.set("bindAttribLocation", glBindAttribLocation)
-		.set("attachShader", _glAttachShader)
+	module_GL
+		//Getting information about the context
+		//.set("getContextAttributes", glGetContextAttributes)
+		//Setting and getting state
 		.set("activeTexture", glActiveTexture)
-		.set("validateProgram", glValidateProgram)
-		//.set("texSubImage2D", glTexSubImage2D)
-		.set("texParameterf", glTexParameterf)
-		.set("stencilOpSeparate", glStencilOpSeparate)
-		.set("stencilOp", glStencilOp)
-		.set("stencilMaskSeparate", glStencilMaskSeparate)
-		.set("stencilMask", glStencilMask)
-		.set("stencilFuncSeparate", glStencilFuncSeparate)
-		.set("stencilFunc", glStencilFunc)
-		.set("sampleCoverage", glSampleCoverage)
-		//.set("readPixels", glReadPixels)
-		.set("polygonOffset", glPolygonOffset)
-		.set("isTexture", glIsTexture)
-		.set("isShader", glIsShader)
-		.set("isRenderbuffer", glIsRenderbuffer)
-		.set("isProgram", glIsProgram)
-		.set("isFramebuffer", glIsFramebuffer)
+		.set("blendColor", glBlendColor)
+		.set("blendEquation", glBlendEquation)
+		.set("blendEquationSeparate", glBlendEquationSeparate)
+		.set("blendFunc", glBlendFunc)
+		.set("blendFuncSeparate", glBlendFuncSeparate)
+		.set("clearColor", glClearColor)
+		.set("clearDepth", glClearDepth)
+		.set("clearStencil", glClearStencil)
+		.set("colorMask", glColorMask)
+		.set("cullFace", glCullFace)
+		.set("depthFunc", glDepthFunc)
+		.set("depthMask", glDepthMask)
+		.set("depthRange", glDepthRange)
+		.set("disable", glDisable)
+		.set("enable", glEnable)
+		.set("frontFace", glFrontFace)
+		.set("getParameter", _glGetParameter)
+		.set("getError", _glGetError)
+		.set("hint", glHint)
 		.set("isEnabled", glIsEnabled)
-		.set("isContextLost", _glIsContextLost)
-		.set("isBuffer", glIsBuffer)
-		//.set("getVertexAttribOffset", glGetVertexAttribOffset)
-		//.set("getVertexAttrib", glGetVertexAttrib)
-		//.set("getUniform", glGetUniform)
-		//.set("getTexParameter", glGetTexParameter)
-		//.set("getSupportedExtensions", glGetSupportedExtensions)
-		//.set("getShaderSource", glGetShaderSource)
-		//.set("getShaderPrecisionFormat", glGetShaderPrecisionFormat)
-		.set("getShaderInfoLog", _glGetShaderInfoLog)
-		//.set("getRenderbufferParameter", glGetRenderbufferParameter)
+		.set("lineWidth", glLineWidth)
+		.set("pixelStorei", glPixelStorei)
+		.set("polygonOffset", glPolygonOffset)
+		.set("sampleCoverage", glSampleCoverage)
+		.set("stencilFunc", glStencilFunc)
+		.set("stencilFuncSeparate", glStencilFuncSeparate)
+		.set("stencilMask", glStencilMask)
+		.set("stencilMaskSeparate", glStencilMaskSeparate)
+		.set("stencilOp", glStencilOp)
+		.set("stencilOpSeparate", glStencilOpSeparate)
+		//Viewing and clipping
+		.set("scissor", glScissor)
+		.set("viewport", glViewport)
+		//Buffer objects
+		.set("bindBuffer", _glBindBuffer)
+		.set("bufferData", _glBufferData)
+		//.set("bufferSubData", glBufferSubData)
+		.set("createBuffer", _glCreateBuffer)
+		.set("deleteBuffer", _glDeleteBuffer)
+		//.set("getBufferParameter", glGetBufferParameter)
+		//.set("isBuffer", _glIsBuffer)
+		//Framebuffer objects
+		//.set("bindFramebuffer", _glBindFramebuffer)
+		.set("checkFramebufferStatus", glCheckFramebufferStatus)
+		.set("createFramebuffer", _glCreateFramebuffer)
+		.set("deleteFramebuffer", _glDeleteFramebuffer)
+		//.set("framebufferRenderbuffer", _glFramebufferRenderbuffer)
+		//.set("framebufferTexture2D", _glFramebufferTexture2D)
+		//.set("getFramebufferAttachmentParameter", _glGetFramebufferAttachmentParameter)
+		//.set("isFramebuffer", _glIsFramebuffer)
+		//Renderbuffer objects
+		//.set("bindRenderbuffer", _glBindRenderbuffer)
+		.set("createRenderbuffer", _glCreateRenderbuffer)
+		.set("deleteRenderbuffer", _glDeleteRenderbuffer)
+		//.set("getRenderbufferParameter", _glGetRenderbufferParameter)
+		.set("isRenderbuffer", glIsRenderbuffer)
+		.set("renderbufferStorage", glRenderbufferStorage)
+		//Texture objects
+		//.set("bindTexture", _glBindTexture)
+		//.set("compressedTexImage2D", glCompressedTexImage2D)
+		//.set("compressedTexSubImage2D", glCompressedTexSubImage2D)
+		.set("copyTexImage2D", glCopyTexImage2D)
+		.set("copyTexSubImage2D", glCopyTexSubImage2D)
+		.set("createTexture", _glCreateTexture)
+		.set("deleteTexture", _glDeleteTexture)
+		.set("generateMipmap", glGenerateMipmap)
+		//.set("getTexParameter", _getTexParameter)
+		//.set("isTexture", _glIsTexture)
+		//.set("texImage2D", _glTexImage2D)
+		.set("texParameterf", glTexParameterf)
+		.set("texParameteri", glTexParameteri)
+		//.set("texSubImage2D", _glTexSubImage2D)
+		//Programs and Shaders
+		.set("attachShader", _glAttachShader)
+		.set("bindAttribLocation", glBindAttribLocation)
+		.set("compileShader", _glCompileShader)
+		.set("createProgram", _glCreateProgram)
+		.set("createShader", _glCreateShader)
+		.set("deleteProgram", _glDeleteProgram)
+		.set("deleteShader", _glDeleteShader)
+		.set("detachShader", _glDetachShader)
+		//.set("getAttachedShaders", _glGetAttachedShaders)
 		.set("getProgramParameter", _glGetProgramParameter)
 		.set("getProgramInfoLog", _glGetProgramInfoLog)
-		//.set("getParameter", glGetParameter)
-		//.set("getFramebufferAttachmentParameter", glGetFramebufferAttachmentParameter)
-		//.set("getExtension", glGetExtension)
-		.set("getError", _glGetError)
-		//.set("getContextAttributes", glGetContextAttributes)
-		//.set("getBufferParameter", glGetBufferParameter)
-		//.set("getAttachedShaders", glGetAttachedShaders)
-		//.set("getActiveUniform", glGetActiveUniform)
-		//.set("getActiveAttrib", glGetActiveAttrib)
+		.set("getShaderParameter", _glGetShaderParameter)
+		//.set("getShaderPrecisionFormat", _glGetShaderPrecisionFormat)
+		.set("getShaderInfoLog", _glGetShaderInfoLog)
+		//.set("getShaderSource", _glGetShaderSource)
+		.set("isProgram", glIsProgram)
+		.set("isShader", glIsShader)
+		.set("linkProgram", _glLinkProgram)
+		.set("shaderSource", _glShaderSource)
+		.set("useProgram", _glUseProgram)
+		//.set("validateProgram", _glValidateProgram)
+		//Uniforms and attributes
+		.set("disableVertexAttribArray", glDisableVertexAttribArray)
+		.set("enableVertexAttribArray", glEnableVertexAttribArray)
+		//.set("getActiveAttrib", _glGetActiveAttrib)
+		//.set("getActiveUniform", _glGetActiveUniform)
+		.set("getAttribLocation", _glGetAttribLocation)
+		//.set("getUniform", _glGetUniform)
+		.set("getUniformLocation", _glGetUniformLocation)
+		//.set("getVertexAttrib", _glGetVertexAttrib)
+		//.set("getVertexAttribOffset", _glGetVertexAttribOffset)
+		.set("uniform1f", _glUniform1f)
+		.set("uniform1i", _glUniform1i)
+		.set("uniform2f", _glUniform2f)
+		.set("uniform2i", _glUniform2i)
+		.set("uniform3f", _glUniform3f)
+		.set("uniform3i", _glUniform3i)
+		.set("uniform4f", _glUniform4f)
+		.set("uniform4i", _glUniform4i)
+		.set("uniform1fv", _glUniform1fv)
+		.set("uniform1iv", _glUniform1iv)
+		.set("uniform2fv", _glUniform2fv)
+		.set("uniform2iv", _glUniform2iv)
+		.set("uniform3fv", _glUniform3fv)
+		.set("uniform3iv", _glUniform3iv)
+		.set("uniform4fv", _glUniform4fv)
+		.set("uniform4iv", _glUniform4iv)
+		.set("uniformMatrix2fv", _glUniformMatrix2fv)
+		.set("uniformMatrix3fv", _glUniformMatrix3fv)
+		.set("uniformMatrix4fv", _glUniformMatrix4fv)
+		.set("vertexAttrib1f", glVertexAttrib1f)
+		.set("vertexAttrib2f", glVertexAttrib2f)
+		.set("vertexAttrib3f", glVertexAttrib3f)
+		.set("vertexAttrib4f", glVertexAttrib4f)
+		//.set("vertexAttrib1fv", _glVertexAttrib1fv)
+		//.set("vertexAttrib2fv", _glVertexAttrib2fv)
+		//.set("vertexAttrib3fv", _glVertexAttrib3fv)
+		//.set("vertexAttrib4fv", _glVertexAttrib4fv)
+		.set("vertexAttribPointer", _glVertexAttribPointer)
+		//Writing to the drawing buffer
+		.set("clear", glClear)
 		.set("drawArrays", glDrawArrays)
-		.set("detachShader", _glDetachShader)
-		.set("depthRange", glDepthRange)
-		.set("copyTexSubImage2D", glCopyTexSubImage2D)
-		.set("copyTexImage2D", glCopyTexImage2D)
-		//.set("compressedTexSubImage2D", glCompressedTexSubImage2D)
-		//.set("compressedTexImage2D", glCompressedTexImage2D)
-		.set("checkFramebufferStatus", glCheckFramebufferStatus)
-		//.set("bufferSubData", glBufferSubData)
-		.set("blendColor", glBlendColor)
-		.set("bindTexture", glBindTexture)
-		//.set("commit", glCommit)
+		.set("drawElements", _glDrawElements)
 		.set("finish", glFinish)
-		.set("framebufferRenderbuffer", glFramebufferRenderbuffer)
-		.set("hint", glHint)
+		.set("flush", glFlush)
+		//Reading back pixels
+		//.set("readPixels", _glReadPixels)
+		//Detecting context lost events
+		.set("isContextLost", _glIsContextLost)
+		//Detecting and enabling extensions
+		//.set("getSupportedExtensions", _glGetSupportedExtensions)
+		//.set("getExtension", _glGetExtension)
 		/* ClearBufferMask */
 		ADD_CONST(DEPTH_BUFFER_BIT)
 		ADD_CONST(STENCIL_BUFFER_BIT)
@@ -1203,8 +1313,37 @@ void Bind_GL(v8::Isolate * iso)
 	global->Set(v8pp::to_v8(iso, "gl"), module_GL.new_instance());
 }
 
-std::string mapShader(const char *src)
+std::string mapShader(const char *src, GLenum shaderType)
 {
-	static std::regex reg(R"(\blowp\b|\bhighp\b|\bmediump\b)", std::regex_constants::ECMAScript | std::regex_constants::optimize);
-	return std::regex_replace(src, reg, "", std::regex_constants::match_any);
+	//https://www.khronos.org/opengl/wiki/Type_Qualifier_(GLSL), precision has no effect on desktop openGL
+	static std::regex reg_precision("\\b(lowp|highp|mediump)\\b", std::regex_constants::ECMAScript | std::regex_constants::optimize);
+	std::string res = std::regex_replace(src, reg_precision, "", std::regex_constants::match_any);
+	//remove .f or \digit f
+	static std::regex reg_f("([0-9]\\w*\\.|[0-9])\\w*f", std::regex_constants::ECMAScript | std::regex_constants::optimize);
+	res = std::regex_replace(res, reg_f, "$1", std::regex_constants::match_any);
+	//attribute => in
+	static std::regex reg_attr("\\b(attribute)\\b", std::regex_constants::ECMAScript | std::regex_constants::optimize);
+	res = std::regex_replace(res, reg_attr, "in", std::regex_constants::match_any);
+	//varying => in|out
+	static std::regex reg_varying("\\b(varying)\\b", std::regex_constants::ECMAScript | std::regex_constants::optimize);
+	if (shaderType == GL_VERTEX_SHADER)
+	{
+		res = std::regex_replace(res, reg_attr, "out", std::regex_constants::match_any);
+	}
+	else
+	{
+		res = std::regex_replace(res, reg_attr, "in", std::regex_constants::match_any);
+	}
+	//gl_FragColor=>webgl_FragColor
+	static std::regex reg_fragcolor("\\bgl_FragColor\\b", std::regex_constants::ECMAScript | std::regex_constants::optimize);
+	if (shaderType == GL_FRAGMENT_SHADER && std::regex_search(res, reg_fragcolor, std::regex_constants::match_any))
+	{
+		res = std::regex_replace(res, reg_fragcolor, "webgl_FragColor", std::regex_constants::match_any);
+		res = "out vec4 webgl_FragColor;\n" + res;
+	}
+	//add #extension GL_ARB_gpu_shader5
+	res = "#extension GL_ARB_gpu_shader5 : enable\n" + res;
+	//add version 330
+	res = "#version 330 core\n" + res;
+	return res;
 }

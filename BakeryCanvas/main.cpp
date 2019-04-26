@@ -42,7 +42,8 @@ GLFWwindow* InitWindow(int width = 800, int height = 600, const char* title = "B
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 #ifdef WIN32
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
+	//glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 #endif
 #ifdef __APPLE__
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -73,7 +74,7 @@ void mainLoop(uv_idle_t* handle) {
 		int v = _glGetError();
 		if (v != GL_NO_ERROR)
 		{
-			printf("OpenGL error %x\n", v);
+			printf("OpenGL error %04X\n", v);
 		}
         glfwSwapBuffers(window);
         glClear(GL_COLOR_BUFFER_BIT);
