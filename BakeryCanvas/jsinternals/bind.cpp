@@ -7,6 +7,8 @@
 #define BIND_INTERNAL_FUNC(x) BIND_INTERNAL_FUNC_DIFF(x,x)
 
 void Bind_Internals(v8::Isolate* isolate) {
+  auto global = isolate->GetCurrentContext()->Global();
+  global->Set(v8::String::NewFromUtf8(isolate, "window"), global);
   BIND_INTERNAL_FUNC(log);
   BIND_INTERNAL_FUNC(setTimeout);
   BIND_INTERNAL_FUNC(setInterval);

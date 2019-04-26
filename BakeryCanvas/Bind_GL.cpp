@@ -1,6 +1,11 @@
 #include "Bind_GL.h"
+#include "translator.h"
 
-static std::string variable_prefix = "";
+#ifdef BK_ENABLE_SHADER_TRANSLATOR
+static const std::string variable_prefix = ANGLE_HASH_NAME_PREFIX;
+#else
+static const std::string variable_prefix = "";
+#endif
 
 static GLenum inner_GLError = GL_NO_ERROR;
 static GLboolean use_InnerError = false;
@@ -448,8 +453,12 @@ void _glDeleteBuffer(WebGLBuffer &buffer)
 void _glShaderSource(WebGLShader &shader, const std::string &source)
 {
 	CHECK_VALID(shader);
+#ifdef BK_ENABLE_SHADER_TRANSLATOR
+	const char* v = BKShaderTranslator::translate(shader.type, source).c_str();
+#else
 	auto s = mapShader(source.c_str(), shader.type);
-	const char *v = s.c_str();
+	auto v = s.c_str();
+#endif
 	glShaderSource(shader.shader, 1, &v, NULL);
 	CHECK_GL;
 }
