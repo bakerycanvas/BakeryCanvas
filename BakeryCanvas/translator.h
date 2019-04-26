@@ -12,5 +12,5 @@
 
 namespace BKShaderTranslator {
     std::string translate(GLenum type, const std::string& str);
-    void GenerateResources(ShBuiltInResources* resources);
+    void _getResources(ShBuiltInResources* resources);
 }

@@ -11,7 +11,7 @@ namespace BKShaderTranslator {
         sh::Initialize();
 
         ShBuiltInResources resources;
-        GenerateResources(&resources);
+        _getResources(&resources);
 
         sh::Initialize();
 
@@ -33,7 +33,7 @@ namespace BKShaderTranslator {
         return code;
     }
 
-    void GenerateResources(ShBuiltInResources* resources) {
+    void _getResources(ShBuiltInResources* resources) {
         sh::InitBuiltInResources(resources);
 
         resources->MaxVertexAttribs = 8;
