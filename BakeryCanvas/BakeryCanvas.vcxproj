@@ -89,7 +89,7 @@
     <ClCompile>
       <WarningLevel>Level2</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <SDLCheck>true</SDLCheck>
+      <SDLCheck>false</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PreprocessorDefinitions>WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -117,7 +117,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <SDLCheck>true</SDLCheck>
+      <SDLCheck>false</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PreprocessorDefinitions>WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -139,6 +139,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="queue\queue.cpp" />
     <ClCompile Include="system.cpp" />
+    <ClCompile Include="translator.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Bind_GL.h" />
@@ -148,6 +149,7 @@
     <ClInclude Include="jsinternals\settimeout.h" />
     <ClInclude Include="queue\queue.h" />
     <ClInclude Include="system.h" />
+    <ClInclude Include="translator.h" />
     <ClInclude Include="v8pp\call_from_v8.hpp" />
     <ClInclude Include="v8pp\call_v8.hpp" />
     <ClInclude Include="v8pp\class.hpp" />

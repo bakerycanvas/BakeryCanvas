@@ -51,6 +51,9 @@
     <ClCompile Include="system.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="translator.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Bind_GL.h">
@@ -129,6 +132,9 @@
       <Filter>jsinternals</Filter>
     </ClInclude>
     <ClInclude Include="system.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="translator.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
