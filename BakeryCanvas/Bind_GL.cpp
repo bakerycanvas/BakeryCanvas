@@ -279,6 +279,7 @@ v8::Local<v8::Object> _glCreateShader(GLenum type)
 {
 	auto shader = new WebGLShader();
 	shader->shader = glCreateShader(type);
+	shader->type = type;
 	return v8pp::class_<WebGLShader>::import_external(v8::Isolate::GetCurrent(), shader);
 }
 
@@ -334,12 +335,14 @@ void _glDeleteBuffer(WebGLBuffer &buffer)
 void _glShaderSource(WebGLShader &shader, const std::string &source)
 {
 	CHECK_VALID(shader);
-	int type;
-	glGetShaderiv(shader.shader, GL_SHADER_TYPE, &type);
-	//auto s = mapShader(source.c_str());
-	auto s = source;
-	s = BKShaderTranslator::translate(source, type);
-	const char *v = s.c_str();
+
+#ifdef BK_ENABLE_SHADER_TRANSLATOR
+  const char* v = BKShaderTranslator::translate(shader.type, source).c_str();
+#else
+	auto s = mapShader(source.c_str());
+	auto v = s.c_str();
+#endif
+
 	glShaderSource(shader.shader, 1, &v, NULL);
 }
 
@@ -535,7 +538,11 @@ void _glBindBuffer(GLenum target, WebGLBuffer &buffer)
 GLint _glGetAttribLocation(WebGLProgram &program, const std::string name)
 {
 	CHECK_VALID_RETURN(program, -1);
+#ifdef BK_ENABLE_SHADER_TRANSLATOR
+		return glGetAttribLocation(program.program, (ANGLE_HASH_NAME_PREFIX + name).c_str());
+#else
 	return glGetAttribLocation(program.program, name.c_str());
+#endif
 }
 
 v8::Local<v8::Value> _glGetUniformLocation(WebGLProgram &program, const std::string name)
@@ -550,7 +557,11 @@ v8::Local<v8::Value> _glGetUniformLocation(WebGLProgram &program, const std::str
 		_glSetError(GL_INVALID_VALUE);
 		return v8::Null(v8::Isolate::GetCurrent());
 	}
+#ifdef BK_ENABLE_SHADER_TRANSLATOR
+	GLint loc = glGetUniformLocation(program.program, (ANGLE_HASH_NAME_PREFIX + name).c_str());
+#else
 	GLint loc = glGetUniformLocation(program.program, name.c_str());
+#endif
 	if (loc == -1)
 	{
 		return v8::Null(v8::Isolate::GetCurrent());

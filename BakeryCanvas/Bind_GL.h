@@ -11,6 +11,9 @@
 #include "v8pp/persistent.hpp"
 #include "v8pp/throw_ex.hpp"
 #include "v8pp/utility.hpp"
+#ifdef BK_ENABLE_SHADER_TRANSLATOR
+#include "translator.h"
+#endif
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -39,6 +42,10 @@
 #define GL_CONTEXT_LOST_WEBGL 0x9242
 #define GL_UNPACK_COLORSPACE_CONVERSION_WEBGL 0x9243
 #define GL_BROWSER_DEFAULT_WEBGL 0x9244
+
+#ifdef BK_ENABLE_SHADER_TRANSLATOR
+#define ANGLE_HASH_NAME_PREFIX "_u"
+#endif
 
 void Bind_GL(v8::Isolate * iso);
 
@@ -116,6 +123,7 @@ class WebGLShader : public WebGLObject
 {
 public:
 	GLuint shader;
+	GLenum type;
 
 	~WebGLShader()
 	{

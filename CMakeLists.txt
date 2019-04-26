@@ -1,3 +1,5 @@
+option(BK_ENABLE_SHADER_TRANSLATOR "Use tranlator from Angle Project to transpile shader" OFF)
+
 # CMake 最低版本号要求
 cmake_minimum_required (VERSION 2.8)
 # 项目信息
@@ -7,6 +9,12 @@ project (BakeryCanvas)
 aux_source_directory(BakeryCanvas DIR_SRCS)
 aux_source_directory(BakeryCanvas/jsinternals DIR_SRCS)
 aux_source_directory(BakeryCanvas/queue DIR_SRCS)
+
+if(NOT BK_ENABLE_SHADER_TRANSLATOR)
+list(REMOVE_ITEM DIR_SRCS "BakeryCanvas/translator.h")
+list(REMOVE_ITEM DIR_SRCS "BakeryCanvas/translator.cpp")
+endif()
+
 link_directories("${PROJECT_SOURCE_DIR}/BakeryCanvas/libs")
 # 指定生成目标
 add_executable(BakeryCanvas ${DIR_SRCS})
@@ -35,10 +43,15 @@ if(WIN32)
   target_link_libraries(BakeryCanvas v8_monolith glfw3dll uv)
 elseif(APPLE)
   MESSAGE("This is MacOS.")
-  target_link_libraries(BakeryCanvas v8_monolith translator preprocessor angle_common glfw.3 uv c++ "-framework CoreFoundation")
+  target_link_libraries(BakeryCanvas v8_monolith glfw.3 uv c++ "-framework CoreFoundation")
 elseif(UNIX)
   MESSAGE("This is Linux.")
 endif()
 
 # 编译开关
 add_definitions(-DDEBUG)
+if(BK_ENABLE_SHADER_TRANSLATOR)
+  MESSAGE("Use shader translator")
+  target_link_libraries(BakeryCanvas translator preprocessor angle_common)
+  add_definitions(-DBK_ENABLE_SHADER_TRANSLATOR)
+endif()

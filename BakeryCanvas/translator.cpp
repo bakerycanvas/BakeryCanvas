@@ -9,7 +9,7 @@
 namespace BKShaderTranslator {
     const unsigned int NUM_SOURCE_STRINGS = 1;
 
-    std::string translate(const std::string& str, GLenum type) {
+    std::string translate(GLenum type, const std::string& str) {
 
         ShShaderSpec spec = SH_WEBGL_SPEC;
         ShShaderOutput output = SH_GLSL_330_CORE_OUTPUT;
@@ -17,57 +17,29 @@ namespace BKShaderTranslator {
         sh::Initialize();
 
         ShBuiltInResources resources;
-        GenerateResources(&resources);
+        _getResources(&resources);
 
         sh::Initialize();
+
         auto compiler = sh::ConstructCompiler(type, spec, output, &resources);
 
-  //      std::string source;
-		//if (!ReadShaderSource("/Users/Icemic/Workspace/BakeryCanvas/test/fixtures/test.frag", source))
-		//{
-		//	source = "attribute vec3 aPos;"  "void main(void){ gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);" "}";
-		//}
+        auto x = str.c_str();
 
-        // const char* const shaderStrings[] = { "attribute vec3 aPos;"
-        //                                       "void main(void){ gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);"
-        //                                       "}" };
-
-        // std::string str1 = "attribute vec3 aPos;void main(void){ gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);}";
-        // auto str2 = str1.c_str();
-        // auto str3 = &str2;
-		auto v = str.c_str();
-        int ret = sh::Compile(compiler, &v, 1, SH_VALIDATE | SH_OBJECT_CODE);
-        printf("%d\n", ret);
+        std::string code = "";
+        int ret = sh::Compile(compiler, &x, 1, SH_VALIDATE | SH_OBJECT_CODE);
         if (ret) {
-            std::string code = sh::GetObjectCode(compiler);
+            code = sh::GetObjectCode(compiler);
+            printf("output\n");
             printf(code.c_str());
             printf("\n\n");
-            return code;
-        }
-		return str;
-    }
-
-    static bool ReadShaderSource(const char* fileName, std::string &source) {
-        FILE* in = fopen(fileName, "rb");
-        if (!in) {
-            printf("Error: unable to open input file: %s\n", fileName);
-            return false;
         }
 
-        // Obtain file size.
-        fseek(in, 0, SEEK_END);
-        size_t count = ftell(in);
-		fseek(in, 0, SEEK_SET);
-		char *buf = (char*)malloc(count + 1);
-		fread(buf, 1, count, in);
-		buf[count] = 0;
-		source = buf;
+        sh::Destruct(compiler);
+        sh::Finalize();
+        return code;
+        }
 
-        fclose(in);
-        return true;
-    }
-
-    void GenerateResources(ShBuiltInResources* resources) {
+    void _getResources(ShBuiltInResources* resources) {
         sh::InitBuiltInResources(resources);
 
         resources->MaxVertexAttribs = 8;
