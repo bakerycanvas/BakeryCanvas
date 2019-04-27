@@ -47,9 +47,15 @@
 #define ANGLE_HASH_NAME_PREFIX "_u"
 #endif
 
+#if defined(DEBUG) || defined(_DEBUG) || defined(BKE_DEBUG)
+#define CHECK_GL {auto x=glGetError();if(x!=0)printf("%s:%d, %04X\n", __FUNCTION__,__LINE__,x);}
+#else
+#define CHECK_GL
+#endif
+
 void Bind_GL(v8::Isolate * iso);
 
-std::string mapShader(const char *src);
+std::string mapShader(const char *src, GLenum shaderType);
 
 class WebGLObject
 {
@@ -123,6 +129,7 @@ class WebGLShader : public WebGLObject
 {
 public:
 	GLuint shader;
+	//cache shader type
 	GLenum type;
 
 	~WebGLShader()
