@@ -16,4 +16,6 @@ void Bind_Internals(v8::Isolate* isolate) {
   BIND_INTERNAL_FUNC(clearInterval);
   BIND_INTERNAL_FUNC(requestAnimationFrame);
   BIND_INTERNAL_FUNC(cancelAnimationFrame);
+
+  BKJSInternals::initBakery();  
 }

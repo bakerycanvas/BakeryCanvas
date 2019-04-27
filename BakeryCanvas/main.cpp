@@ -42,8 +42,8 @@ GLFWwindow* InitWindow(int width = 800, int height = 600, const char* title = "B
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 #ifdef WIN32
-	//glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    // glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 #endif
 #ifdef __APPLE__
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -64,18 +64,17 @@ GLFWwindow* InitWindow(int width = 800, int height = 600, const char* title = "B
     }
     glViewport(0, 0, width, height);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-	return window;
+    return window;
 }
 
 extern GLenum _glGetError();
 
 void mainLoop(uv_idle_t* handle) {
     if (!glfwWindowShouldClose(window)) {
-		int v = _glGetError();
-		if (v != GL_NO_ERROR)
-		{
-			printf("OpenGL error %04X\n", v);
-		}
+        int v = _glGetError();
+        if (v != GL_NO_ERROR) {
+            printf("OpenGL error %04X\n", v);
+        }
         glfwSwapBuffers(window);
         glClear(GL_COLOR_BUFFER_BIT);
         glfwPollEvents();
@@ -90,7 +89,7 @@ void deInitGLFW() {
 
 v8::Isolate* isolate;
 
-void V8RunScript(v8::Local<v8::Context> v8_main_context, const std::string &scriptsrc, const std::string &filename, std::string& resultstr, std::string& exceptionstr) {
+void V8RunScript(v8::Local<v8::Context> v8_main_context, const std::string& scriptsrc, const std::string& filename, std::string& resultstr, std::string& exceptionstr) {
     v8::Isolate::Scope isolate_scope(isolate);
     v8::HandleScope handle_scope(isolate);
     // v8::Local<v8::Context> context = v8::Context::New(isolate, NULL, v8_global);
@@ -109,16 +108,13 @@ void V8RunScript(v8::Local<v8::Context> v8_main_context, const std::string &scri
     v8::Local<v8::Script> script = maybescript.ToLocalChecked();
     v8::MaybeLocal<v8::Value> result = script->Run(v8_main_context);
     if (result.IsEmpty()) {
-		v8::MaybeLocal<v8::Value> maybe_exception = tryHandler.StackTrace(v8_main_context);
-		v8::Local<v8::Value> exception;
-		if (maybe_exception.IsEmpty())
-		{
-			exception = tryHandler.Exception();
-		}
-		else
-		{
-			exception = maybe_exception.ToLocalChecked();
-		}
+        v8::MaybeLocal<v8::Value> maybe_exception = tryHandler.StackTrace(v8_main_context);
+        v8::Local<v8::Value> exception;
+        if (maybe_exception.IsEmpty()) {
+            exception = tryHandler.Exception();
+        } else {
+            exception = maybe_exception.ToLocalChecked();
+        }
         v8::String::Utf8Value exception_utf8(isolate, exception);
         exceptionstr = *exception_utf8;
         resultstr.clear();
@@ -167,10 +163,10 @@ int main(int argc, char* argv[]) {
 
     if (filename.empty()) {
         V8RunScript(v8_main_context, "var s=gl.createShader(gl.VERTEX_SHADER);gl.getShaderParameter(s,0)", "", result, exception);
-		if (result.length() > 0) {
-			printf("result:%s\n", result.c_str());
-		}
-	} else {
+        if (result.length() > 0) {
+            printf("result:%s\n", result.c_str());
+        }
+    } else {
         // get current working directory
         std::string cwd = filename.substr(0, filename.find_last_of('/'));
         std::ifstream entryFile;
@@ -219,6 +215,9 @@ int main(int argc, char* argv[]) {
             tmp << file.rdbuf();
             scriptText = tmp.str();
             V8RunScript(v8_main_context, scriptText, filename, result, exception);
+            if (!exception.empty()) {
+                break;
+            }
         }
     }
 

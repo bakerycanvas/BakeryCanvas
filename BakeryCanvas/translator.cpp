@@ -29,15 +29,15 @@ namespace BKShaderTranslator {
         int ret = sh::Compile(compiler, &x, 1, SH_VALIDATE | SH_OBJECT_CODE);
         if (ret) {
             code = sh::GetObjectCode(compiler);
-            printf("output\n");
-            printf(code.c_str());
-            printf("\n\n");
+        } else {
+            printf("[Shader Translator] error occurs, fallback to original shader.\n");
+            code = str;
         }
 
         sh::Destruct(compiler);
         sh::Finalize();
         return code;
-        }
+    }
 
     void _getResources(ShBuiltInResources* resources) {
         sh::InitBuiltInResources(resources);
