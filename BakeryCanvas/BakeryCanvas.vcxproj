@@ -132,6 +132,7 @@
   <ItemGroup>
     <ClCompile Include="Bind_GL.cpp" />
     <ClCompile Include="glad.cpp" />
+    <ClCompile Include="jsinternals\bakery.cpp" />
     <ClCompile Include="jsinternals\bind.cpp" />
     <ClCompile Include="jsinternals\log.cpp" />
     <ClCompile Include="jsinternals\requestanimationframe.cpp" />
@@ -143,6 +144,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Bind_GL.h" />
+    <ClInclude Include="jsinternals\bakery.h" />
     <ClInclude Include="jsinternals\bind.h" />
     <ClInclude Include="jsinternals\log.h" />
     <ClInclude Include="jsinternals\requestanimationframe.h" />

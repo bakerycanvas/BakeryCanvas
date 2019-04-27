@@ -8,7 +8,7 @@ namespace BKJSInternals {
             std::transform(type.begin(), type.end(), type.begin(), ::tolower);
             if (type == "webgl") {
                 auto global = isolate->GetCurrentContext()->Global();
-                return global->Get(v8pp::to_v8(isolate, "gl"));
+                return getGLmodule();
             }
             return v8pp::throw_ex(isolate, "Unsupported context type.");
         }
@@ -29,6 +29,9 @@ namespace BKJSInternals {
 
         auto global = isolate->GetCurrentContext()->Global();
         global->Set(v8pp::to_v8(isolate, "bakery"), bakery.new_instance());
+
+        //init GL module and cache
+        getGLmodule();
     }
 
     v8::Local<v8::Object> createCanvas(){

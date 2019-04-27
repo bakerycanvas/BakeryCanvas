@@ -12,6 +12,8 @@
 #include "v8pp/throw_ex.hpp"
 #include "v8pp/utility.hpp"
 
+#include "../Bind_GL.h"
+
 namespace BKJSInternals {
     void initBakery();
     void createAudio();

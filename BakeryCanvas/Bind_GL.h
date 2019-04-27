@@ -55,88 +55,119 @@
 
 void Bind_GL(v8::Isolate * iso);
 
+v8::Local<v8::Object> getGLmodule();
+
 std::string mapShader(const char *src, GLenum shaderType);
+
+bool shouldSwapBuffer();
+
+void clearSwapBufferTag();
+
+void setSwapBufferTag();
+
+struct WebGLContextAttributes;
+
+WebGLContextAttributes* getCurrentContextAttributes();
+
+struct WebGLContextAttributes
+{
+    enum
+    {
+        PERFORMANCE_DEFAULT,
+        PERFORMANCE_HIGH,
+        PERFORMANCE_LOW
+    };
+    bool alpha = true;
+    bool depth = true;
+    bool stencil = false;
+    bool antialias = true;
+    bool premultipliedAlpha = true;
+    bool preserveDrawingBuffer = false;
+    int powerPreference = PERFORMANCE_DEFAULT;
+    bool failIfMajorPerformanceCaveat = false;
+    bool desynchronized = false;
+};
 
 class WebGLObject
 {
-	GLboolean invalidated;
+    GLboolean invalidated;
 public:
-	WebGLObject()
-	{
-		invalidated = false;
-	}
+    WebGLObject()
+    {
+        invalidated = false;
+    }
 
-	void Invalidate()
-	{
-		invalidated = true;
-	}
+    void Invalidate()
+    {
+        invalidated = true;
+    }
 
-	bool isValid() const
-	{
-		return !invalidated;
-	}
+    bool isValid() const
+    {
+        return !invalidated;
+    }
 };
 
 class WebGLBuffer : public WebGLObject
 {
 public:
-	GLuint buffer;
+    GLuint buffer;
 
-	~WebGLBuffer()
-	{
-		if (isValid())
-			glDeleteBuffers(1, &buffer);
-	}
+    ~WebGLBuffer()
+    {
+        if (isValid())
+            glDeleteBuffers(1, &buffer);
+    }
 };
 
 class WebGLFramebuffer : public WebGLObject
 {
 public:
-	GLuint fbo;
+    GLuint fbo;
 
-	~WebGLFramebuffer()
-	{
-		if (isValid())
-			glDeleteFramebuffers(1, &fbo);
-	}
+    ~WebGLFramebuffer()
+    {
+        if (isValid())
+            glDeleteFramebuffers(1, &fbo);
+    }
 };
 
 class WebGLProgram : public WebGLObject
 {
 public:
-	GLuint program;
+    GLuint program;
 
-	~WebGLProgram()
-	{
-		if (isValid())
-			glDeleteProgram(program);
-	}
+    ~WebGLProgram()
+    {
+        if (isValid())
+            glDeleteProgram(program);
+    }
 };
 
 class WebGLRenderbuffer : public WebGLObject
 {
 public:
-	GLuint rbo;
+    GLuint rbo;
 
-	~WebGLRenderbuffer()
-	{
-		if (isValid())
-			glDeleteRenderbuffers(1, &rbo);
-	}
+    ~WebGLRenderbuffer()
+    {
+        if (isValid())
+            glDeleteRenderbuffers(1, &rbo);
+    }
 };
 
 class WebGLShader : public WebGLObject
 {
 public:
-	GLuint shader;
-	//cache shader type
-	GLenum type;
+    GLuint shader;
+    //cache shader type
+    GLenum type;
 
-	~WebGLShader()
-	{
-		if (isValid())
-			glDeleteShader(shader);
-	}
+    ~WebGLShader()
+    {
+        if (isValid())
+            glDeleteShader(shader);
+    }
 };
 
 class WebGLTexture : public WebGLObject
@@ -144,11 +175,11 @@ class WebGLTexture : public WebGLObject
 public:
     GLuint textureID;
 
-	~WebGLTexture()
-	{
-		if(isValid())
-			glDeleteTextures(1, &textureID);
-	}
+    ~WebGLTexture()
+    {
+        if(isValid())
+            glDeleteTextures(1, &textureID);
+    }
 };
 
 class WebGLUniformLocation : public WebGLObject
@@ -160,45 +191,45 @@ public:
 class WebGLActiveInfo : public WebGLObject
 {
 public:
-	GLint size;
-	GLenum type;
-	std::string name;
+    GLint size;
+    GLenum type;
+    std::string name;
 
-	GLint getSize() const
-	{
-		return size;
-	}
+    GLint getSize() const
+    {
+        return size;
+    }
 
-	GLenum getType() const
-	{
-		return type;
-	}
+    GLenum getType() const
+    {
+        return type;
+    }
 
-	std::string getName() const
-	{
-		return name;
-	}
+    std::string getName() const
+    {
+        return name;
+    }
 };
 
 class WebGLShaderPrecisionFormat : public WebGLObject
 {
 public:
-	GLint rangeMin;
-	GLint rangeMax;
-	GLint precision;
+    GLint rangeMin;
+    GLint rangeMax;
+    GLint precision;
 
-	GLint getRangeMin() const
-	{
-		return rangeMin;
-	}
+    GLint getRangeMin() const
+    {
+        return rangeMin;
+    }
 
-	GLint getRangeMax() const
-	{
-		return rangeMax;
-	}
+    GLint getRangeMax() const
+    {
+        return rangeMax;
+    }
 
-	GLint getPrecision() const
-	{
-		return precision;
-	}
+    GLint getPrecision() const
+    {
+        return precision;
+    }
 };
