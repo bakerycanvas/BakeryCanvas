@@ -15,5 +15,6 @@
 #include "jsinternals/log.h"
 #include "jsinternals/settimeout.h"
 #include "jsinternals/requestanimationframe.h"
+#include "jsinternals/bakery.h"
 
 void Bind_Internals(v8::Isolate* iso);
