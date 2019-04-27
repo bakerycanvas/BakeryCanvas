@@ -1348,11 +1348,11 @@ std::string mapShader(const char *src, GLenum shaderType)
 	static std::regex reg_varying("\\b(varying)\\b", std::regex_constants::ECMAScript | std::regex_constants::optimize);
 	if (shaderType == GL_VERTEX_SHADER)
 	{
-		res = std::regex_replace(res, reg_attr, "out", std::regex_constants::match_any);
+		res = std::regex_replace(res, reg_varying, "out", std::regex_constants::match_any);
 	}
 	else
 	{
-		res = std::regex_replace(res, reg_attr, "in", std::regex_constants::match_any);
+		res = std::regex_replace(res, reg_varying, "in", std::regex_constants::match_any);
 	}
 	//gl_FragColor=>webgl_FragColor
 	static std::regex reg_fragcolor("\\bgl_FragColor\\b", std::regex_constants::ECMAScript | std::regex_constants::optimize);
