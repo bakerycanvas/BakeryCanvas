@@ -54,6 +54,9 @@
     <ClCompile Include="translator.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="jsinternals\bakery.cpp">
+      <Filter>jsinternals</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Bind_GL.h">
@@ -136,6 +139,9 @@
     </ClInclude>
     <ClInclude Include="translator.h">
       <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="jsinternals\bakery.h">
+      <Filter>jsinternals</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

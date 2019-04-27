@@ -71,12 +71,16 @@ extern GLenum _glGetError();
 
 void mainLoop(uv_idle_t* handle) {
     if (!glfwWindowShouldClose(window)) {
-        int v = _glGetError();
-        if (v != GL_NO_ERROR) {
-            printf("OpenGL error %04X\n", v);
+        if (shouldSwapBuffer())
+        {
+            if (getCurrentContextAttributes()->preserveDrawingBuffer)
+            {
+                //TODO:shit
+            }
+            glfwSwapBuffers(window);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+            clearSwapBufferTag();
         }
-        glfwSwapBuffers(window);
-        glClear(GL_COLOR_BUFFER_BIT);
         glfwPollEvents();
     } else {
         BKQueue::stop();

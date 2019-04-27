@@ -22,6 +22,9 @@ const GLint const_GL_UNPACK_COLORSPACE_CONVERSION_WEBGL = GL_BROWSER_DEFAULT_WEB
 //context
 static WebGLContextAttributes GL_context;
 
+//should swap buffer at the end of the frame
+static bool GL_shouldSwapBuffer = false;
+
 void _glSetError(GLenum error)
 {
     inner_GLError = error;
@@ -385,6 +388,7 @@ void _glDrawElements(GLenum mode, GLsizei count, GLenum type, intptr_t indices)
 {
     glDrawElements(mode, count, type, (const void*)indices);
     CHECK_GL;
+    setSwapBufferTag();
 }
 
 v8::Local<v8::Object> _glCreateTexture()
@@ -834,6 +838,34 @@ v8::Local<v8::Value> _glGetUniformLocation(WebGLProgram &program, const std::str
     return v8pp::class_<WebGLUniformLocation>::import_external(v8::Isolate::GetCurrent(), locobj);
 }
 
+void _glClear(GLbitfield bits)
+{
+    glClear(bits);
+    CHECK_GL;
+    setSwapBufferTag();
+}
+
+void _glDrawArrays(GLenum mode, GLint first, GLsizei count)
+{
+    glDrawArrays(mode, first, count);
+    CHECK_GL;
+    setSwapBufferTag();
+}
+
+void _glFinish()
+{
+    glFinish();
+    CHECK_GL;
+    setSwapBufferTag();
+}
+
+void _glFlush()
+{
+    glFlush();
+    CHECK_GL;
+    setSwapBufferTag();
+}
+
 #define BIND_CLASS(x) v8pp::class_<x> class_##x(iso);class_##x.inherit<WebGLObject>();global->Set(v8pp::to_v8(iso, #x), class_##x.js_function_template()->GetFunction());
 
 #define BIND_CLASS_WITH_MEMBER(x, member) v8pp::class_<x> class_##x(iso);\
@@ -884,574 +916,581 @@ void Bind_GL(v8::Isolate * iso)
         .set("rangeMax", v8pp::property(&WebGLShaderPrecisionFormat::getRangeMax))
         .set("precision", v8pp::property(&WebGLShaderPrecisionFormat::getPrecision))
     );
+}
 
-    v8pp::module module_GL(iso);
-    module_GL
-        //Getting information about the context
-        .set("getContextAttributes", _glGetContextAttributes)
-        //Setting and getting state
-        .set("activeTexture", glActiveTexture)
-        .set("blendColor", glBlendColor)
-        .set("blendEquation", glBlendEquation)
-        .set("blendEquationSeparate", glBlendEquationSeparate)
-        .set("blendFunc", glBlendFunc)
-        .set("blendFuncSeparate", glBlendFuncSeparate)
-        .set("clearColor", glClearColor)
-        .set("clearDepth", glClearDepth)
-        .set("clearStencil", glClearStencil)
-        .set("colorMask", glColorMask)
-        .set("cullFace", glCullFace)
-        .set("depthFunc", glDepthFunc)
-        .set("depthMask", glDepthMask)
-        .set("depthRange", glDepthRange)
-        .set("disable", glDisable)
-        .set("enable", glEnable)
-        .set("frontFace", glFrontFace)
-        .set("getParameter", _glGetParameter)
-        .set("getError", _glGetError)
-        .set("hint", glHint)
-        .set("isEnabled", glIsEnabled)
-        .set("lineWidth", glLineWidth)
-        .set("pixelStorei", glPixelStorei)
-        .set("polygonOffset", glPolygonOffset)
-        .set("sampleCoverage", glSampleCoverage)
-        .set("stencilFunc", glStencilFunc)
-        .set("stencilFuncSeparate", glStencilFuncSeparate)
-        .set("stencilMask", glStencilMask)
-        .set("stencilMaskSeparate", glStencilMaskSeparate)
-        .set("stencilOp", glStencilOp)
-        .set("stencilOpSeparate", glStencilOpSeparate)
-        //Viewing and clipping
-        .set("scissor", glScissor)
-        .set("viewport", glViewport)
-        //Buffer objects
-        .set("bindBuffer", _glBindBuffer)
-        .set("bufferData", _glBufferData)
-        .set("bufferSubData", _glBufferSubData)
-        .set("createBuffer", _glCreateBuffer)
-        .set("deleteBuffer", _glDeleteBuffer)
-        .set("getBufferParameter", _glGetBufferParameter)
-        .set("isBuffer", _glIsBuffer)
-        //Framebuffer objects
-        //.set("bindFramebuffer", _glBindFramebuffer)
-        .set("checkFramebufferStatus", glCheckFramebufferStatus)
-        .set("createFramebuffer", _glCreateFramebuffer)
-        .set("deleteFramebuffer", _glDeleteFramebuffer)
-        //.set("framebufferRenderbuffer", _glFramebufferRenderbuffer)
-        //.set("framebufferTexture2D", _glFramebufferTexture2D)
-        //.set("getFramebufferAttachmentParameter", _glGetFramebufferAttachmentParameter)
-        //.set("isFramebuffer", _glIsFramebuffer)
-        //Renderbuffer objects
-        //.set("bindRenderbuffer", _glBindRenderbuffer)
-        .set("createRenderbuffer", _glCreateRenderbuffer)
-        .set("deleteRenderbuffer", _glDeleteRenderbuffer)
-        //.set("getRenderbufferParameter", _glGetRenderbufferParameter)
-        .set("isRenderbuffer", glIsRenderbuffer)
-        .set("renderbufferStorage", glRenderbufferStorage)
-        //Texture objects
-        //.set("bindTexture", _glBindTexture)
-        //.set("compressedTexImage2D", glCompressedTexImage2D)
-        //.set("compressedTexSubImage2D", glCompressedTexSubImage2D)
-        .set("copyTexImage2D", glCopyTexImage2D)
-        .set("copyTexSubImage2D", glCopyTexSubImage2D)
-        .set("createTexture", _glCreateTexture)
-        .set("deleteTexture", _glDeleteTexture)
-        .set("generateMipmap", glGenerateMipmap)
-        //.set("getTexParameter", _getTexParameter)
-        //.set("isTexture", _glIsTexture)
-        //.set("texImage2D", _glTexImage2D)
-        .set("texParameterf", glTexParameterf)
-        .set("texParameteri", glTexParameteri)
-        //.set("texSubImage2D", _glTexSubImage2D)
-        //Programs and Shaders
-        .set("attachShader", _glAttachShader)
-        .set("bindAttribLocation", glBindAttribLocation)
-        .set("compileShader", _glCompileShader)
-        .set("createProgram", _glCreateProgram)
-        .set("createShader", _glCreateShader)
-        .set("deleteProgram", _glDeleteProgram)
-        .set("deleteShader", _glDeleteShader)
-        .set("detachShader", _glDetachShader)
-        //.set("getAttachedShaders", _glGetAttachedShaders)
-        .set("getProgramParameter", _glGetProgramParameter)
-        .set("getProgramInfoLog", _glGetProgramInfoLog)
-        .set("getShaderParameter", _glGetShaderParameter)
-        //.set("getShaderPrecisionFormat", _glGetShaderPrecisionFormat)
-        .set("getShaderInfoLog", _glGetShaderInfoLog)
-        //.set("getShaderSource", _glGetShaderSource)
-        .set("isProgram", glIsProgram)
-        .set("isShader", glIsShader)
-        .set("linkProgram", _glLinkProgram)
-        .set("shaderSource", _glShaderSource)
-        .set("useProgram", _glUseProgram)
-        //.set("validateProgram", _glValidateProgram)
-        //Uniforms and attributes
-        .set("disableVertexAttribArray", glDisableVertexAttribArray)
-        .set("enableVertexAttribArray", glEnableVertexAttribArray)
-        //.set("getActiveAttrib", _glGetActiveAttrib)
-        //.set("getActiveUniform", _glGetActiveUniform)
-        .set("getAttribLocation", _glGetAttribLocation)
-        //.set("getUniform", _glGetUniform)
-        .set("getUniformLocation", _glGetUniformLocation)
-        //.set("getVertexAttrib", _glGetVertexAttrib)
-        //.set("getVertexAttribOffset", _glGetVertexAttribOffset)
-        .set("uniform1f", _glUniform1f)
-        .set("uniform1i", _glUniform1i)
-        .set("uniform2f", _glUniform2f)
-        .set("uniform2i", _glUniform2i)
-        .set("uniform3f", _glUniform3f)
-        .set("uniform3i", _glUniform3i)
-        .set("uniform4f", _glUniform4f)
-        .set("uniform4i", _glUniform4i)
-        .set("uniform1fv", _glUniform1fv)
-        .set("uniform1iv", _glUniform1iv)
-        .set("uniform2fv", _glUniform2fv)
-        .set("uniform2iv", _glUniform2iv)
-        .set("uniform3fv", _glUniform3fv)
-        .set("uniform3iv", _glUniform3iv)
-        .set("uniform4fv", _glUniform4fv)
-        .set("uniform4iv", _glUniform4iv)
-        .set("uniformMatrix2fv", _glUniformMatrix2fv)
-        .set("uniformMatrix3fv", _glUniformMatrix3fv)
-        .set("uniformMatrix4fv", _glUniformMatrix4fv)
-        .set("vertexAttrib1f", glVertexAttrib1f)
-        .set("vertexAttrib2f", glVertexAttrib2f)
-        .set("vertexAttrib3f", glVertexAttrib3f)
-        .set("vertexAttrib4f", glVertexAttrib4f)
-        //.set("vertexAttrib1fv", _glVertexAttrib1fv)
-        //.set("vertexAttrib2fv", _glVertexAttrib2fv)
-        //.set("vertexAttrib3fv", _glVertexAttrib3fv)
-        //.set("vertexAttrib4fv", _glVertexAttrib4fv)
-        .set("vertexAttribPointer", _glVertexAttribPointer)
-        //Writing to the drawing buffer
-        .set("clear", glClear)
-        .set("drawArrays", glDrawArrays)
-        .set("drawElements", _glDrawElements)
-        .set("finish", glFinish)
-        .set("flush", glFlush)
-        //Reading back pixels
-        //.set("readPixels", _glReadPixels)
-        //Detecting context lost events
-        .set("isContextLost", _glIsContextLost)
-        //Detecting and enabling extensions
-        //.set("getSupportedExtensions", _glGetSupportedExtensions)
-        //.set("getExtension", _glGetExtension)
-        /* ClearBufferMask */
-        ADD_CONST(DEPTH_BUFFER_BIT)
-        ADD_CONST(STENCIL_BUFFER_BIT)
-        ADD_CONST(COLOR_BUFFER_BIT)
-        /* BeginMode */
-        ADD_CONST(POINTS)
-        ADD_CONST(LINES)
-        ADD_CONST(LINE_LOOP)
-        ADD_CONST(LINE_STRIP)
-        ADD_CONST(TRIANGLES)
-        ADD_CONST(TRIANGLE_STRIP)
-        ADD_CONST(TRIANGLE_FAN)
-        /* AlphaFunction (not supported in ES20) */
-        /*      NEVER */
-        /*      LESS */
-        /*      EQUAL */
-        /*      LEQUAL */
-        /*      GREATER */
-        /*      NOTEQUAL */
-        /*      GEQUAL */
-        /*      ALWAYS */
-        /* BlendingFactorDest */
-        ADD_CONST(ZERO)
-        ADD_CONST(ONE)
-        ADD_CONST(SRC_COLOR)
-        ADD_CONST(ONE_MINUS_SRC_COLOR)
-        ADD_CONST(SRC_ALPHA)
-        ADD_CONST(ONE_MINUS_SRC_ALPHA)
-        ADD_CONST(DST_ALPHA)
-        ADD_CONST(ONE_MINUS_DST_ALPHA)
+v8::Local<v8::Object> getGLmodule()
+{
+    static v8pp::module module_GL(v8::Isolate::GetCurrent());
+    static bool module_init = false;
+    if (!module_init)
+    {
+        module_GL
+            //Getting information about the context
+            .set("getContextAttributes", _glGetContextAttributes)
+            //Setting and getting state
+            .set("activeTexture", glActiveTexture)
+            .set("blendColor", glBlendColor)
+            .set("blendEquation", glBlendEquation)
+            .set("blendEquationSeparate", glBlendEquationSeparate)
+            .set("blendFunc", glBlendFunc)
+            .set("blendFuncSeparate", glBlendFuncSeparate)
+            .set("clearColor", glClearColor)
+            .set("clearDepth", glClearDepth)
+            .set("clearStencil", glClearStencil)
+            .set("colorMask", glColorMask)
+            .set("cullFace", glCullFace)
+            .set("depthFunc", glDepthFunc)
+            .set("depthMask", glDepthMask)
+            .set("depthRange", glDepthRange)
+            .set("disable", glDisable)
+            .set("enable", glEnable)
+            .set("frontFace", glFrontFace)
+            .set("getParameter", _glGetParameter)
+            .set("getError", _glGetError)
+            .set("hint", glHint)
+            .set("isEnabled", glIsEnabled)
+            .set("lineWidth", glLineWidth)
+            .set("pixelStorei", glPixelStorei)
+            .set("polygonOffset", glPolygonOffset)
+            .set("sampleCoverage", glSampleCoverage)
+            .set("stencilFunc", glStencilFunc)
+            .set("stencilFuncSeparate", glStencilFuncSeparate)
+            .set("stencilMask", glStencilMask)
+            .set("stencilMaskSeparate", glStencilMaskSeparate)
+            .set("stencilOp", glStencilOp)
+            .set("stencilOpSeparate", glStencilOpSeparate)
+            //Viewing and clipping
+            .set("scissor", glScissor)
+            .set("viewport", glViewport)
+            //Buffer objects
+            .set("bindBuffer", _glBindBuffer)
+            .set("bufferData", _glBufferData)
+            .set("bufferSubData", _glBufferSubData)
+            .set("createBuffer", _glCreateBuffer)
+            .set("deleteBuffer", _glDeleteBuffer)
+            .set("getBufferParameter", _glGetBufferParameter)
+            .set("isBuffer", _glIsBuffer)
+            //Framebuffer objects
+            //.set("bindFramebuffer", _glBindFramebuffer)
+            .set("checkFramebufferStatus", glCheckFramebufferStatus)
+            .set("createFramebuffer", _glCreateFramebuffer)
+            .set("deleteFramebuffer", _glDeleteFramebuffer)
+            //.set("framebufferRenderbuffer", _glFramebufferRenderbuffer)
+            //.set("framebufferTexture2D", _glFramebufferTexture2D)
+            //.set("getFramebufferAttachmentParameter", _glGetFramebufferAttachmentParameter)
+            //.set("isFramebuffer", _glIsFramebuffer)
+            //Renderbuffer objects
+            //.set("bindRenderbuffer", _glBindRenderbuffer)
+            .set("createRenderbuffer", _glCreateRenderbuffer)
+            .set("deleteRenderbuffer", _glDeleteRenderbuffer)
+            //.set("getRenderbufferParameter", _glGetRenderbufferParameter)
+            .set("isRenderbuffer", glIsRenderbuffer)
+            .set("renderbufferStorage", glRenderbufferStorage)
+            //Texture objects
+            //.set("bindTexture", _glBindTexture)
+            //.set("compressedTexImage2D", glCompressedTexImage2D)
+            //.set("compressedTexSubImage2D", glCompressedTexSubImage2D)
+            .set("copyTexImage2D", glCopyTexImage2D)
+            .set("copyTexSubImage2D", glCopyTexSubImage2D)
+            .set("createTexture", _glCreateTexture)
+            .set("deleteTexture", _glDeleteTexture)
+            .set("generateMipmap", glGenerateMipmap)
+            //.set("getTexParameter", _getTexParameter)
+            //.set("isTexture", _glIsTexture)
+            //.set("texImage2D", _glTexImage2D)
+            .set("texParameterf", glTexParameterf)
+            .set("texParameteri", glTexParameteri)
+            //.set("texSubImage2D", _glTexSubImage2D)
+            //Programs and Shaders
+            .set("attachShader", _glAttachShader)
+            .set("bindAttribLocation", glBindAttribLocation)
+            .set("compileShader", _glCompileShader)
+            .set("createProgram", _glCreateProgram)
+            .set("createShader", _glCreateShader)
+            .set("deleteProgram", _glDeleteProgram)
+            .set("deleteShader", _glDeleteShader)
+            .set("detachShader", _glDetachShader)
+            //.set("getAttachedShaders", _glGetAttachedShaders)
+            .set("getProgramParameter", _glGetProgramParameter)
+            .set("getProgramInfoLog", _glGetProgramInfoLog)
+            .set("getShaderParameter", _glGetShaderParameter)
+            //.set("getShaderPrecisionFormat", _glGetShaderPrecisionFormat)
+            .set("getShaderInfoLog", _glGetShaderInfoLog)
+            //.set("getShaderSource", _glGetShaderSource)
+            .set("isProgram", glIsProgram)
+            .set("isShader", glIsShader)
+            .set("linkProgram", _glLinkProgram)
+            .set("shaderSource", _glShaderSource)
+            .set("useProgram", _glUseProgram)
+            //.set("validateProgram", _glValidateProgram)
+            //Uniforms and attributes
+            .set("disableVertexAttribArray", glDisableVertexAttribArray)
+            .set("enableVertexAttribArray", glEnableVertexAttribArray)
+            //.set("getActiveAttrib", _glGetActiveAttrib)
+            //.set("getActiveUniform", _glGetActiveUniform)
+            .set("getAttribLocation", _glGetAttribLocation)
+            //.set("getUniform", _glGetUniform)
+            .set("getUniformLocation", _glGetUniformLocation)
+            //.set("getVertexAttrib", _glGetVertexAttrib)
+            //.set("getVertexAttribOffset", _glGetVertexAttribOffset)
+            .set("uniform1f", _glUniform1f)
+            .set("uniform1i", _glUniform1i)
+            .set("uniform2f", _glUniform2f)
+            .set("uniform2i", _glUniform2i)
+            .set("uniform3f", _glUniform3f)
+            .set("uniform3i", _glUniform3i)
+            .set("uniform4f", _glUniform4f)
+            .set("uniform4i", _glUniform4i)
+            .set("uniform1fv", _glUniform1fv)
+            .set("uniform1iv", _glUniform1iv)
+            .set("uniform2fv", _glUniform2fv)
+            .set("uniform2iv", _glUniform2iv)
+            .set("uniform3fv", _glUniform3fv)
+            .set("uniform3iv", _glUniform3iv)
+            .set("uniform4fv", _glUniform4fv)
+            .set("uniform4iv", _glUniform4iv)
+            .set("uniformMatrix2fv", _glUniformMatrix2fv)
+            .set("uniformMatrix3fv", _glUniformMatrix3fv)
+            .set("uniformMatrix4fv", _glUniformMatrix4fv)
+            .set("vertexAttrib1f", glVertexAttrib1f)
+            .set("vertexAttrib2f", glVertexAttrib2f)
+            .set("vertexAttrib3f", glVertexAttrib3f)
+            .set("vertexAttrib4f", glVertexAttrib4f)
+            //.set("vertexAttrib1fv", _glVertexAttrib1fv)
+            //.set("vertexAttrib2fv", _glVertexAttrib2fv)
+            //.set("vertexAttrib3fv", _glVertexAttrib3fv)
+            //.set("vertexAttrib4fv", _glVertexAttrib4fv)
+            .set("vertexAttribPointer", _glVertexAttribPointer)
+            //Writing to the drawing buffer
+            .set("clear", _glClear)
+            .set("drawArrays", _glDrawArrays)
+            .set("drawElements", _glDrawElements)
+            .set("finish", _glFinish)
+            .set("flush", _glFlush)
+            //Reading back pixels
+            //.set("readPixels", _glReadPixels)
+            //Detecting context lost events
+            .set("isContextLost", _glIsContextLost)
+            //Detecting and enabling extensions
+            //.set("getSupportedExtensions", _glGetSupportedExtensions)
+            //.set("getExtension", _glGetExtension)
+            /* ClearBufferMask */
+            ADD_CONST(DEPTH_BUFFER_BIT)
+            ADD_CONST(STENCIL_BUFFER_BIT)
+            ADD_CONST(COLOR_BUFFER_BIT)
+            /* BeginMode */
+            ADD_CONST(POINTS)
+            ADD_CONST(LINES)
+            ADD_CONST(LINE_LOOP)
+            ADD_CONST(LINE_STRIP)
+            ADD_CONST(TRIANGLES)
+            ADD_CONST(TRIANGLE_STRIP)
+            ADD_CONST(TRIANGLE_FAN)
+            /* AlphaFunction (not supported in ES20) */
+            /*      NEVER */
+            /*      LESS */
+            /*      EQUAL */
+            /*      LEQUAL */
+            /*      GREATER */
+            /*      NOTEQUAL */
+            /*      GEQUAL */
+            /*      ALWAYS */
+            /* BlendingFactorDest */
+            ADD_CONST(ZERO)
+            ADD_CONST(ONE)
+            ADD_CONST(SRC_COLOR)
+            ADD_CONST(ONE_MINUS_SRC_COLOR)
+            ADD_CONST(SRC_ALPHA)
+            ADD_CONST(ONE_MINUS_SRC_ALPHA)
+            ADD_CONST(DST_ALPHA)
+            ADD_CONST(ONE_MINUS_DST_ALPHA)
             /* BlendingFactorSrc */
             /*      ZERO */
             /*      ONE */
             ADD_CONST(DST_COLOR)
-        ADD_CONST(ONE_MINUS_DST_COLOR)
-        ADD_CONST(SRC_ALPHA_SATURATE)
-        /*      SRC_ALPHA */
-        /*      ONE_MINUS_SRC_ALPHA */
-        /*      DST_ALPHA */
-        /*      ONE_MINUS_DST_ALPHA */
+            ADD_CONST(ONE_MINUS_DST_COLOR)
+            ADD_CONST(SRC_ALPHA_SATURATE)
+            /*      SRC_ALPHA */
+            /*      ONE_MINUS_SRC_ALPHA */
+            /*      DST_ALPHA */
+            /*      ONE_MINUS_DST_ALPHA */
 
-        /* BlendEquationSeparate */
-        ADD_CONST(FUNC_ADD)
-        ADD_CONST(BLEND_EQUATION)
-        ADD_CONST(BLEND_EQUATION_RGB)
-        ADD_CONST(BLEND_EQUATION_ALPHA)
+            /* BlendEquationSeparate */
+            ADD_CONST(FUNC_ADD)
+            ADD_CONST(BLEND_EQUATION)
+            ADD_CONST(BLEND_EQUATION_RGB)
+            ADD_CONST(BLEND_EQUATION_ALPHA)
 
-        /* BlendSubtract */
-        ADD_CONST(FUNC_SUBTRACT)
-        ADD_CONST(FUNC_REVERSE_SUBTRACT)
+            /* BlendSubtract */
+            ADD_CONST(FUNC_SUBTRACT)
+            ADD_CONST(FUNC_REVERSE_SUBTRACT)
 
-        /* Separate Blend Functions */
-        ADD_CONST(BLEND_DST_RGB)
-        ADD_CONST(BLEND_SRC_RGB)
-        ADD_CONST(BLEND_DST_ALPHA)
-        ADD_CONST(BLEND_SRC_ALPHA)
-        ADD_CONST(CONSTANT_COLOR)
-        ADD_CONST(ONE_MINUS_CONSTANT_COLOR)
-        ADD_CONST(CONSTANT_ALPHA)
-        ADD_CONST(ONE_MINUS_CONSTANT_ALPHA)
-        ADD_CONST(BLEND_COLOR)
+            /* Separate Blend Functions */
+            ADD_CONST(BLEND_DST_RGB)
+            ADD_CONST(BLEND_SRC_RGB)
+            ADD_CONST(BLEND_DST_ALPHA)
+            ADD_CONST(BLEND_SRC_ALPHA)
+            ADD_CONST(CONSTANT_COLOR)
+            ADD_CONST(ONE_MINUS_CONSTANT_COLOR)
+            ADD_CONST(CONSTANT_ALPHA)
+            ADD_CONST(ONE_MINUS_CONSTANT_ALPHA)
+            ADD_CONST(BLEND_COLOR)
 
-        /* Buffer Objects */
-        ADD_CONST(ARRAY_BUFFER)
-        ADD_CONST(ELEMENT_ARRAY_BUFFER)
-        ADD_CONST(ARRAY_BUFFER_BINDING)
-        ADD_CONST(ELEMENT_ARRAY_BUFFER_BINDING)
+            /* Buffer Objects */
+            ADD_CONST(ARRAY_BUFFER)
+            ADD_CONST(ELEMENT_ARRAY_BUFFER)
+            ADD_CONST(ARRAY_BUFFER_BINDING)
+            ADD_CONST(ELEMENT_ARRAY_BUFFER_BINDING)
 
-        ADD_CONST(STREAM_DRAW)
-        ADD_CONST(STATIC_DRAW)
-        ADD_CONST(DYNAMIC_DRAW)
+            ADD_CONST(STREAM_DRAW)
+            ADD_CONST(STATIC_DRAW)
+            ADD_CONST(DYNAMIC_DRAW)
 
-        ADD_CONST(BUFFER_SIZE)
-        ADD_CONST(BUFFER_USAGE)
+            ADD_CONST(BUFFER_SIZE)
+            ADD_CONST(BUFFER_USAGE)
 
-        ADD_CONST(CURRENT_VERTEX_ATTRIB)
+            ADD_CONST(CURRENT_VERTEX_ATTRIB)
 
-        /* CullFaceMode */
-        ADD_CONST(FRONT)
-        ADD_CONST(BACK)
-        ADD_CONST(FRONT_AND_BACK)
+            /* CullFaceMode */
+            ADD_CONST(FRONT)
+            ADD_CONST(BACK)
+            ADD_CONST(FRONT_AND_BACK)
 
-        /* DepthFunction */
-        /*      NEVER */
-        /*      LESS */
-        /*      EQUAL */
-        /*      LEQUAL */
-        /*      GREATER */
-        /*      NOTEQUAL */
-        /*      GEQUAL */
-        /*      ALWAYS */
+            /* DepthFunction */
+            /*      NEVER */
+            /*      LESS */
+            /*      EQUAL */
+            /*      LEQUAL */
+            /*      GREATER */
+            /*      NOTEQUAL */
+            /*      GEQUAL */
+            /*      ALWAYS */
 
-        /* EnableCap */
-        /* TEXTURE_2D */
-        ADD_CONST(CULL_FACE)
-        ADD_CONST(BLEND)
-        ADD_CONST(DITHER)
-        ADD_CONST(STENCIL_TEST)
-        ADD_CONST(DEPTH_TEST)
-        ADD_CONST(SCISSOR_TEST)
-        ADD_CONST(POLYGON_OFFSET_FILL)
-        ADD_CONST(SAMPLE_ALPHA_TO_COVERAGE)
-        ADD_CONST(SAMPLE_COVERAGE)
+            /* EnableCap */
+            /* TEXTURE_2D */
+            ADD_CONST(CULL_FACE)
+            ADD_CONST(BLEND)
+            ADD_CONST(DITHER)
+            ADD_CONST(STENCIL_TEST)
+            ADD_CONST(DEPTH_TEST)
+            ADD_CONST(SCISSOR_TEST)
+            ADD_CONST(POLYGON_OFFSET_FILL)
+            ADD_CONST(SAMPLE_ALPHA_TO_COVERAGE)
+            ADD_CONST(SAMPLE_COVERAGE)
 
-        /* ErrorCode */
-        ADD_CONST(NO_ERROR)
-        ADD_CONST(INVALID_ENUM)
-        ADD_CONST(INVALID_VALUE)
-        ADD_CONST(INVALID_OPERATION)
-        ADD_CONST(OUT_OF_MEMORY)
+            /* ErrorCode */
+            ADD_CONST(NO_ERROR)
+            ADD_CONST(INVALID_ENUM)
+            ADD_CONST(INVALID_VALUE)
+            ADD_CONST(INVALID_OPERATION)
+            ADD_CONST(OUT_OF_MEMORY)
 
-        /* FrontFaceDirection */
-        ADD_CONST(CW)
-        ADD_CONST(CCW)
+            /* FrontFaceDirection */
+            ADD_CONST(CW)
+            ADD_CONST(CCW)
 
-        /* GetPName */
-        ADD_CONST(LINE_WIDTH)
-        ADD_CONST(ALIASED_POINT_SIZE_RANGE)
-        ADD_CONST(ALIASED_LINE_WIDTH_RANGE)
-        ADD_CONST(CULL_FACE_MODE)
-        ADD_CONST(FRONT_FACE)
-        ADD_CONST(DEPTH_RANGE)
-        ADD_CONST(DEPTH_WRITEMASK)
-        ADD_CONST(DEPTH_CLEAR_VALUE)
-        ADD_CONST(DEPTH_FUNC)
-        ADD_CONST(STENCIL_CLEAR_VALUE)
-        ADD_CONST(STENCIL_FUNC)
-        ADD_CONST(STENCIL_FAIL)
-        ADD_CONST(STENCIL_PASS_DEPTH_FAIL)
-        ADD_CONST(STENCIL_PASS_DEPTH_PASS)
-        ADD_CONST(STENCIL_REF)
-        ADD_CONST(STENCIL_VALUE_MASK)
-        ADD_CONST(STENCIL_WRITEMASK)
-        ADD_CONST(STENCIL_BACK_FUNC)
-        ADD_CONST(STENCIL_BACK_FAIL)
-        ADD_CONST(STENCIL_BACK_PASS_DEPTH_FAIL)
-        ADD_CONST(STENCIL_BACK_PASS_DEPTH_PASS)
-        ADD_CONST(STENCIL_BACK_REF)
-        ADD_CONST(STENCIL_BACK_VALUE_MASK)
-        ADD_CONST(STENCIL_BACK_WRITEMASK)
-        ADD_CONST(VIEWPORT)
-        ADD_CONST(SCISSOR_BOX)
-        /*      SCISSOR_TEST */
-        ADD_CONST(COLOR_CLEAR_VALUE)
-        ADD_CONST(COLOR_WRITEMASK)
-        ADD_CONST(UNPACK_ALIGNMENT)
-        ADD_CONST(PACK_ALIGNMENT)
-        ADD_CONST(MAX_TEXTURE_SIZE)
-        ADD_CONST(MAX_VIEWPORT_DIMS)
-        ADD_CONST(SUBPIXEL_BITS)
-        ADD_CONST(RED_BITS)
-        ADD_CONST(GREEN_BITS)
-        ADD_CONST(BLUE_BITS)
-        ADD_CONST(ALPHA_BITS)
-        ADD_CONST(DEPTH_BITS)
-        ADD_CONST(STENCIL_BITS)
-        ADD_CONST(POLYGON_OFFSET_UNITS)
-        /*      POLYGON_OFFSET_FILL */
-        ADD_CONST(POLYGON_OFFSET_FACTOR)
-        ADD_CONST(TEXTURE_BINDING_2D)
-        ADD_CONST(SAMPLE_BUFFERS)
-        ADD_CONST(SAMPLES)
-        ADD_CONST(SAMPLE_COVERAGE_VALUE)
-        ADD_CONST(SAMPLE_COVERAGE_INVERT)
+            /* GetPName */
+            ADD_CONST(LINE_WIDTH)
+            ADD_CONST(ALIASED_POINT_SIZE_RANGE)
+            ADD_CONST(ALIASED_LINE_WIDTH_RANGE)
+            ADD_CONST(CULL_FACE_MODE)
+            ADD_CONST(FRONT_FACE)
+            ADD_CONST(DEPTH_RANGE)
+            ADD_CONST(DEPTH_WRITEMASK)
+            ADD_CONST(DEPTH_CLEAR_VALUE)
+            ADD_CONST(DEPTH_FUNC)
+            ADD_CONST(STENCIL_CLEAR_VALUE)
+            ADD_CONST(STENCIL_FUNC)
+            ADD_CONST(STENCIL_FAIL)
+            ADD_CONST(STENCIL_PASS_DEPTH_FAIL)
+            ADD_CONST(STENCIL_PASS_DEPTH_PASS)
+            ADD_CONST(STENCIL_REF)
+            ADD_CONST(STENCIL_VALUE_MASK)
+            ADD_CONST(STENCIL_WRITEMASK)
+            ADD_CONST(STENCIL_BACK_FUNC)
+            ADD_CONST(STENCIL_BACK_FAIL)
+            ADD_CONST(STENCIL_BACK_PASS_DEPTH_FAIL)
+            ADD_CONST(STENCIL_BACK_PASS_DEPTH_PASS)
+            ADD_CONST(STENCIL_BACK_REF)
+            ADD_CONST(STENCIL_BACK_VALUE_MASK)
+            ADD_CONST(STENCIL_BACK_WRITEMASK)
+            ADD_CONST(VIEWPORT)
+            ADD_CONST(SCISSOR_BOX)
+            /*      SCISSOR_TEST */
+            ADD_CONST(COLOR_CLEAR_VALUE)
+            ADD_CONST(COLOR_WRITEMASK)
+            ADD_CONST(UNPACK_ALIGNMENT)
+            ADD_CONST(PACK_ALIGNMENT)
+            ADD_CONST(MAX_TEXTURE_SIZE)
+            ADD_CONST(MAX_VIEWPORT_DIMS)
+            ADD_CONST(SUBPIXEL_BITS)
+            ADD_CONST(RED_BITS)
+            ADD_CONST(GREEN_BITS)
+            ADD_CONST(BLUE_BITS)
+            ADD_CONST(ALPHA_BITS)
+            ADD_CONST(DEPTH_BITS)
+            ADD_CONST(STENCIL_BITS)
+            ADD_CONST(POLYGON_OFFSET_UNITS)
+            /*      POLYGON_OFFSET_FILL */
+            ADD_CONST(POLYGON_OFFSET_FACTOR)
+            ADD_CONST(TEXTURE_BINDING_2D)
+            ADD_CONST(SAMPLE_BUFFERS)
+            ADD_CONST(SAMPLES)
+            ADD_CONST(SAMPLE_COVERAGE_VALUE)
+            ADD_CONST(SAMPLE_COVERAGE_INVERT)
 
-        /* GetTextureParameter */
-        /*      TEXTURE_MAG_FILTER */
-        /*      TEXTURE_MIN_FILTER */
-        /*      TEXTURE_WRAP_S */
-        /*      TEXTURE_WRAP_T */
+            /* GetTextureParameter */
+            /*      TEXTURE_MAG_FILTER */
+            /*      TEXTURE_MIN_FILTER */
+            /*      TEXTURE_WRAP_S */
+            /*      TEXTURE_WRAP_T */
 
-        ADD_CONST(COMPRESSED_TEXTURE_FORMATS)
+            ADD_CONST(COMPRESSED_TEXTURE_FORMATS)
 
-        /* HintMode */
-        ADD_CONST(DONT_CARE)
-        ADD_CONST(FASTEST)
-        ADD_CONST(NICEST)
+            /* HintMode */
+            ADD_CONST(DONT_CARE)
+            ADD_CONST(FASTEST)
+            ADD_CONST(NICEST)
 
-        /* HintTarget */
-        ADD_CONST(GENERATE_MIPMAP_HINT)
+            /* HintTarget */
+            ADD_CONST(GENERATE_MIPMAP_HINT)
 
-        /* DataType */
-        ADD_CONST(BYTE)
-        ADD_CONST(UNSIGNED_BYTE)
-        ADD_CONST(SHORT)
-        ADD_CONST(UNSIGNED_SHORT)
-        ADD_CONST(INT)
-        ADD_CONST(UNSIGNED_INT)
-        ADD_CONST(FLOAT)
+            /* DataType */
+            ADD_CONST(BYTE)
+            ADD_CONST(UNSIGNED_BYTE)
+            ADD_CONST(SHORT)
+            ADD_CONST(UNSIGNED_SHORT)
+            ADD_CONST(INT)
+            ADD_CONST(UNSIGNED_INT)
+            ADD_CONST(FLOAT)
 
-        /* PixelFormat */
-        ADD_CONST(DEPTH_COMPONENT)
-        ADD_CONST(ALPHA)
-        ADD_CONST(RGB)
-        ADD_CONST(RGBA)
-        ADD_CONST(LUMINANCE)
-        ADD_CONST(LUMINANCE_ALPHA)
+            /* PixelFormat */
+            ADD_CONST(DEPTH_COMPONENT)
+            ADD_CONST(ALPHA)
+            ADD_CONST(RGB)
+            ADD_CONST(RGBA)
+            ADD_CONST(LUMINANCE)
+            ADD_CONST(LUMINANCE_ALPHA)
 
-        /* PixelType */
-        /*      UNSIGNED_BYTE */
-        ADD_CONST(UNSIGNED_SHORT_4_4_4_4)
-        ADD_CONST(UNSIGNED_SHORT_5_5_5_1)
-        ADD_CONST(UNSIGNED_SHORT_5_6_5)
+            /* PixelType */
+            /*      UNSIGNED_BYTE */
+            ADD_CONST(UNSIGNED_SHORT_4_4_4_4)
+            ADD_CONST(UNSIGNED_SHORT_5_5_5_1)
+            ADD_CONST(UNSIGNED_SHORT_5_6_5)
 
-        /* Shaders */
-        ADD_CONST(FRAGMENT_SHADER)
-        ADD_CONST(VERTEX_SHADER)
-        ADD_CONST(MAX_VERTEX_ATTRIBS)
-        ADD_CONST(MAX_VERTEX_UNIFORM_VECTORS)
-        ADD_CONST(MAX_VARYING_VECTORS)
-        ADD_CONST(MAX_COMBINED_TEXTURE_IMAGE_UNITS)
-        ADD_CONST(MAX_VERTEX_TEXTURE_IMAGE_UNITS)
-        ADD_CONST(MAX_TEXTURE_IMAGE_UNITS)
-        ADD_CONST(MAX_FRAGMENT_UNIFORM_VECTORS)
-        ADD_CONST(SHADER_TYPE)
-        ADD_CONST(DELETE_STATUS)
-        ADD_CONST(LINK_STATUS)
-        ADD_CONST(VALIDATE_STATUS)
-        ADD_CONST(ATTACHED_SHADERS)
-        ADD_CONST(ACTIVE_UNIFORMS)
-        ADD_CONST(ACTIVE_ATTRIBUTES)
-        ADD_CONST(SHADING_LANGUAGE_VERSION)
-        ADD_CONST(CURRENT_PROGRAM)
+            /* Shaders */
+            ADD_CONST(FRAGMENT_SHADER)
+            ADD_CONST(VERTEX_SHADER)
+            ADD_CONST(MAX_VERTEX_ATTRIBS)
+            ADD_CONST(MAX_VERTEX_UNIFORM_VECTORS)
+            ADD_CONST(MAX_VARYING_VECTORS)
+            ADD_CONST(MAX_COMBINED_TEXTURE_IMAGE_UNITS)
+            ADD_CONST(MAX_VERTEX_TEXTURE_IMAGE_UNITS)
+            ADD_CONST(MAX_TEXTURE_IMAGE_UNITS)
+            ADD_CONST(MAX_FRAGMENT_UNIFORM_VECTORS)
+            ADD_CONST(SHADER_TYPE)
+            ADD_CONST(DELETE_STATUS)
+            ADD_CONST(LINK_STATUS)
+            ADD_CONST(VALIDATE_STATUS)
+            ADD_CONST(ATTACHED_SHADERS)
+            ADD_CONST(ACTIVE_UNIFORMS)
+            ADD_CONST(ACTIVE_ATTRIBUTES)
+            ADD_CONST(SHADING_LANGUAGE_VERSION)
+            ADD_CONST(CURRENT_PROGRAM)
 
-        /* StencilFunction */
-        ADD_CONST(NEVER)
-        ADD_CONST(LESS)
-        ADD_CONST(EQUAL)
-        ADD_CONST(LEQUAL)
-        ADD_CONST(GREATER)
-        ADD_CONST(NOTEQUAL)
-        ADD_CONST(GEQUAL)
-        ADD_CONST(ALWAYS)
+            /* StencilFunction */
+            ADD_CONST(NEVER)
+            ADD_CONST(LESS)
+            ADD_CONST(EQUAL)
+            ADD_CONST(LEQUAL)
+            ADD_CONST(GREATER)
+            ADD_CONST(NOTEQUAL)
+            ADD_CONST(GEQUAL)
+            ADD_CONST(ALWAYS)
 
-        /* StencilOp */
-        /*      ZERO */
-        ADD_CONST(KEEP)
-        ADD_CONST(REPLACE)
-        ADD_CONST(INCR)
-        ADD_CONST(DECR)
-        ADD_CONST(INVERT)
-        ADD_CONST(INCR_WRAP)
-        ADD_CONST(DECR_WRAP)
+            /* StencilOp */
+            /*      ZERO */
+            ADD_CONST(KEEP)
+            ADD_CONST(REPLACE)
+            ADD_CONST(INCR)
+            ADD_CONST(DECR)
+            ADD_CONST(INVERT)
+            ADD_CONST(INCR_WRAP)
+            ADD_CONST(DECR_WRAP)
 
-        /* StringName */
-        ADD_CONST(VENDOR)
-        ADD_CONST(RENDERER)
-        ADD_CONST(VERSION)
+            /* StringName */
+            ADD_CONST(VENDOR)
+            ADD_CONST(RENDERER)
+            ADD_CONST(VERSION)
 
-        /* TextureMagFilter */
-        ADD_CONST(NEAREST)
-        ADD_CONST(LINEAR)
+            /* TextureMagFilter */
+            ADD_CONST(NEAREST)
+            ADD_CONST(LINEAR)
 
-        /* TextureMinFilter */
-        /*      NEAREST */
-        /*      LINEAR */
-        ADD_CONST(NEAREST_MIPMAP_NEAREST)
-        ADD_CONST(LINEAR_MIPMAP_NEAREST)
-        ADD_CONST(NEAREST_MIPMAP_LINEAR)
-        ADD_CONST(LINEAR_MIPMAP_LINEAR)
+            /* TextureMinFilter */
+            /*      NEAREST */
+            /*      LINEAR */
+            ADD_CONST(NEAREST_MIPMAP_NEAREST)
+            ADD_CONST(LINEAR_MIPMAP_NEAREST)
+            ADD_CONST(NEAREST_MIPMAP_LINEAR)
+            ADD_CONST(LINEAR_MIPMAP_LINEAR)
 
-        /* TextureParameterName */
-        ADD_CONST(TEXTURE_MAG_FILTER)
-        ADD_CONST(TEXTURE_MIN_FILTER)
-        ADD_CONST(TEXTURE_WRAP_S)
-        ADD_CONST(TEXTURE_WRAP_T)
+            /* TextureParameterName */
+            ADD_CONST(TEXTURE_MAG_FILTER)
+            ADD_CONST(TEXTURE_MIN_FILTER)
+            ADD_CONST(TEXTURE_WRAP_S)
+            ADD_CONST(TEXTURE_WRAP_T)
 
-        /* TextureTarget */
-        ADD_CONST(TEXTURE_2D)
-        ADD_CONST(TEXTURE)
+            /* TextureTarget */
+            ADD_CONST(TEXTURE_2D)
+            ADD_CONST(TEXTURE)
 
-        ADD_CONST(TEXTURE_CUBE_MAP)
-        ADD_CONST(TEXTURE_BINDING_CUBE_MAP)
-        ADD_CONST(TEXTURE_CUBE_MAP_POSITIVE_X)
-        ADD_CONST(TEXTURE_CUBE_MAP_NEGATIVE_X)
-        ADD_CONST(TEXTURE_CUBE_MAP_POSITIVE_Y)
-        ADD_CONST(TEXTURE_CUBE_MAP_NEGATIVE_Y)
-        ADD_CONST(TEXTURE_CUBE_MAP_POSITIVE_Z)
-        ADD_CONST(TEXTURE_CUBE_MAP_NEGATIVE_Z)
-        ADD_CONST(MAX_CUBE_MAP_TEXTURE_SIZE)
+            ADD_CONST(TEXTURE_CUBE_MAP)
+            ADD_CONST(TEXTURE_BINDING_CUBE_MAP)
+            ADD_CONST(TEXTURE_CUBE_MAP_POSITIVE_X)
+            ADD_CONST(TEXTURE_CUBE_MAP_NEGATIVE_X)
+            ADD_CONST(TEXTURE_CUBE_MAP_POSITIVE_Y)
+            ADD_CONST(TEXTURE_CUBE_MAP_NEGATIVE_Y)
+            ADD_CONST(TEXTURE_CUBE_MAP_POSITIVE_Z)
+            ADD_CONST(TEXTURE_CUBE_MAP_NEGATIVE_Z)
+            ADD_CONST(MAX_CUBE_MAP_TEXTURE_SIZE)
 
-        /* TextureUnit */
-        ADD_CONST(TEXTURE0)
-        ADD_CONST(TEXTURE1)
-        ADD_CONST(TEXTURE2)
-        ADD_CONST(TEXTURE3)
-        ADD_CONST(TEXTURE4)
-        ADD_CONST(TEXTURE5)
-        ADD_CONST(TEXTURE6)
-        ADD_CONST(TEXTURE7)
-        ADD_CONST(TEXTURE8)
-        ADD_CONST(TEXTURE9)
-        ADD_CONST(TEXTURE10)
-        ADD_CONST(TEXTURE11)
-        ADD_CONST(TEXTURE12)
-        ADD_CONST(TEXTURE13)
-        ADD_CONST(TEXTURE14)
-        ADD_CONST(TEXTURE15)
-        ADD_CONST(TEXTURE16)
-        ADD_CONST(TEXTURE17)
-        ADD_CONST(TEXTURE18)
-        ADD_CONST(TEXTURE19)
-        ADD_CONST(TEXTURE20)
-        ADD_CONST(TEXTURE21)
-        ADD_CONST(TEXTURE22)
-        ADD_CONST(TEXTURE23)
-        ADD_CONST(TEXTURE24)
-        ADD_CONST(TEXTURE25)
-        ADD_CONST(TEXTURE26)
-        ADD_CONST(TEXTURE27)
-        ADD_CONST(TEXTURE28)
-        ADD_CONST(TEXTURE29)
-        ADD_CONST(TEXTURE30)
-        ADD_CONST(TEXTURE31)
-        ADD_CONST(ACTIVE_TEXTURE)
+            /* TextureUnit */
+            ADD_CONST(TEXTURE0)
+            ADD_CONST(TEXTURE1)
+            ADD_CONST(TEXTURE2)
+            ADD_CONST(TEXTURE3)
+            ADD_CONST(TEXTURE4)
+            ADD_CONST(TEXTURE5)
+            ADD_CONST(TEXTURE6)
+            ADD_CONST(TEXTURE7)
+            ADD_CONST(TEXTURE8)
+            ADD_CONST(TEXTURE9)
+            ADD_CONST(TEXTURE10)
+            ADD_CONST(TEXTURE11)
+            ADD_CONST(TEXTURE12)
+            ADD_CONST(TEXTURE13)
+            ADD_CONST(TEXTURE14)
+            ADD_CONST(TEXTURE15)
+            ADD_CONST(TEXTURE16)
+            ADD_CONST(TEXTURE17)
+            ADD_CONST(TEXTURE18)
+            ADD_CONST(TEXTURE19)
+            ADD_CONST(TEXTURE20)
+            ADD_CONST(TEXTURE21)
+            ADD_CONST(TEXTURE22)
+            ADD_CONST(TEXTURE23)
+            ADD_CONST(TEXTURE24)
+            ADD_CONST(TEXTURE25)
+            ADD_CONST(TEXTURE26)
+            ADD_CONST(TEXTURE27)
+            ADD_CONST(TEXTURE28)
+            ADD_CONST(TEXTURE29)
+            ADD_CONST(TEXTURE30)
+            ADD_CONST(TEXTURE31)
+            ADD_CONST(ACTIVE_TEXTURE)
 
-        /* TextureWrapMode */
-        ADD_CONST(REPEAT)
-        ADD_CONST(CLAMP_TO_EDGE)
-        ADD_CONST(MIRRORED_REPEAT)
+            /* TextureWrapMode */
+            ADD_CONST(REPEAT)
+            ADD_CONST(CLAMP_TO_EDGE)
+            ADD_CONST(MIRRORED_REPEAT)
 
-        /* Uniform Types */
-        ADD_CONST(FLOAT_VEC2)
-        ADD_CONST(FLOAT_VEC3)
-        ADD_CONST(FLOAT_VEC4)
-        ADD_CONST(INT_VEC2)
-        ADD_CONST(INT_VEC3)
-        ADD_CONST(INT_VEC4)
-        ADD_CONST(BOOL)
-        ADD_CONST(BOOL_VEC2)
-        ADD_CONST(BOOL_VEC3)
-        ADD_CONST(BOOL_VEC4)
-        ADD_CONST(FLOAT_MAT2)
-        ADD_CONST(FLOAT_MAT3)
-        ADD_CONST(FLOAT_MAT4)
-        ADD_CONST(SAMPLER_2D)
-        ADD_CONST(SAMPLER_CUBE)
+            /* Uniform Types */
+            ADD_CONST(FLOAT_VEC2)
+            ADD_CONST(FLOAT_VEC3)
+            ADD_CONST(FLOAT_VEC4)
+            ADD_CONST(INT_VEC2)
+            ADD_CONST(INT_VEC3)
+            ADD_CONST(INT_VEC4)
+            ADD_CONST(BOOL)
+            ADD_CONST(BOOL_VEC2)
+            ADD_CONST(BOOL_VEC3)
+            ADD_CONST(BOOL_VEC4)
+            ADD_CONST(FLOAT_MAT2)
+            ADD_CONST(FLOAT_MAT3)
+            ADD_CONST(FLOAT_MAT4)
+            ADD_CONST(SAMPLER_2D)
+            ADD_CONST(SAMPLER_CUBE)
 
-        /* Vertex Arrays */
-        ADD_CONST(VERTEX_ATTRIB_ARRAY_ENABLED)
-        ADD_CONST(VERTEX_ATTRIB_ARRAY_SIZE)
-        ADD_CONST(VERTEX_ATTRIB_ARRAY_STRIDE)
-        ADD_CONST(VERTEX_ATTRIB_ARRAY_TYPE)
-        ADD_CONST(VERTEX_ATTRIB_ARRAY_NORMALIZED)
-        ADD_CONST(VERTEX_ATTRIB_ARRAY_POINTER)
-        ADD_CONST(VERTEX_ATTRIB_ARRAY_BUFFER_BINDING)
+            /* Vertex Arrays */
+            ADD_CONST(VERTEX_ATTRIB_ARRAY_ENABLED)
+            ADD_CONST(VERTEX_ATTRIB_ARRAY_SIZE)
+            ADD_CONST(VERTEX_ATTRIB_ARRAY_STRIDE)
+            ADD_CONST(VERTEX_ATTRIB_ARRAY_TYPE)
+            ADD_CONST(VERTEX_ATTRIB_ARRAY_NORMALIZED)
+            ADD_CONST(VERTEX_ATTRIB_ARRAY_POINTER)
+            ADD_CONST(VERTEX_ATTRIB_ARRAY_BUFFER_BINDING)
 
-        /* Read Format */
-        ADD_CONST(IMPLEMENTATION_COLOR_READ_TYPE)
-        ADD_CONST(IMPLEMENTATION_COLOR_READ_FORMAT)
+            /* Read Format */
+            ADD_CONST(IMPLEMENTATION_COLOR_READ_TYPE)
+            ADD_CONST(IMPLEMENTATION_COLOR_READ_FORMAT)
 
-        /* Shader Source */
-        ADD_CONST(COMPILE_STATUS)
+            /* Shader Source */
+            ADD_CONST(COMPILE_STATUS)
 
-        /* Shader Precision-Specified Types */
-        ADD_CONST(LOW_FLOAT)
-        ADD_CONST(MEDIUM_FLOAT)
-        ADD_CONST(HIGH_FLOAT)
-        ADD_CONST(LOW_INT)
-        ADD_CONST(MEDIUM_INT)
-        ADD_CONST(HIGH_INT)
+            /* Shader Precision-Specified Types */
+            ADD_CONST(LOW_FLOAT)
+            ADD_CONST(MEDIUM_FLOAT)
+            ADD_CONST(HIGH_FLOAT)
+            ADD_CONST(LOW_INT)
+            ADD_CONST(MEDIUM_INT)
+            ADD_CONST(HIGH_INT)
 
-        /* Framebuffer Object. */
-        ADD_CONST(FRAMEBUFFER)
-        ADD_CONST(RENDERBUFFER)
+            /* Framebuffer Object. */
+            ADD_CONST(FRAMEBUFFER)
+            ADD_CONST(RENDERBUFFER)
 
-        ADD_CONST(RGBA4)
-        ADD_CONST(RGB5_A1)
-        ADD_CONST(RGB565)
-        ADD_CONST(DEPTH_COMPONENT16)
-        ADD_CONST(STENCIL_INDEX8)
-        ADD_CONST(DEPTH_STENCIL)
+            ADD_CONST(RGBA4)
+            ADD_CONST(RGB5_A1)
+            ADD_CONST(RGB565)
+            ADD_CONST(DEPTH_COMPONENT16)
+            ADD_CONST(STENCIL_INDEX8)
+            ADD_CONST(DEPTH_STENCIL)
 
-        ADD_CONST(RENDERBUFFER_WIDTH)
-        ADD_CONST(RENDERBUFFER_HEIGHT)
-        ADD_CONST(RENDERBUFFER_INTERNAL_FORMAT)
-        ADD_CONST(RENDERBUFFER_RED_SIZE)
-        ADD_CONST(RENDERBUFFER_GREEN_SIZE)
-        ADD_CONST(RENDERBUFFER_BLUE_SIZE)
-        ADD_CONST(RENDERBUFFER_ALPHA_SIZE)
-        ADD_CONST(RENDERBUFFER_DEPTH_SIZE)
-        ADD_CONST(RENDERBUFFER_STENCIL_SIZE)
+            ADD_CONST(RENDERBUFFER_WIDTH)
+            ADD_CONST(RENDERBUFFER_HEIGHT)
+            ADD_CONST(RENDERBUFFER_INTERNAL_FORMAT)
+            ADD_CONST(RENDERBUFFER_RED_SIZE)
+            ADD_CONST(RENDERBUFFER_GREEN_SIZE)
+            ADD_CONST(RENDERBUFFER_BLUE_SIZE)
+            ADD_CONST(RENDERBUFFER_ALPHA_SIZE)
+            ADD_CONST(RENDERBUFFER_DEPTH_SIZE)
+            ADD_CONST(RENDERBUFFER_STENCIL_SIZE)
 
-        ADD_CONST(FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE)
-        ADD_CONST(FRAMEBUFFER_ATTACHMENT_OBJECT_NAME)
-        ADD_CONST(FRAMEBUFFER_ATTACHMENT_TEXTURE_LEVEL)
-        ADD_CONST(FRAMEBUFFER_ATTACHMENT_TEXTURE_CUBE_MAP_FACE)
+            ADD_CONST(FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE)
+            ADD_CONST(FRAMEBUFFER_ATTACHMENT_OBJECT_NAME)
+            ADD_CONST(FRAMEBUFFER_ATTACHMENT_TEXTURE_LEVEL)
+            ADD_CONST(FRAMEBUFFER_ATTACHMENT_TEXTURE_CUBE_MAP_FACE)
 
-        ADD_CONST(COLOR_ATTACHMENT0)
-        ADD_CONST(DEPTH_ATTACHMENT)
-        ADD_CONST(STENCIL_ATTACHMENT)
-        ADD_CONST(DEPTH_STENCIL_ATTACHMENT)
+            ADD_CONST(COLOR_ATTACHMENT0)
+            ADD_CONST(DEPTH_ATTACHMENT)
+            ADD_CONST(STENCIL_ATTACHMENT)
+            ADD_CONST(DEPTH_STENCIL_ATTACHMENT)
 
-        ADD_CONST(NONE)
+            ADD_CONST(NONE)
 
-        ADD_CONST(FRAMEBUFFER_COMPLETE)
-        ADD_CONST(FRAMEBUFFER_INCOMPLETE_ATTACHMENT)
-        ADD_CONST(FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT)
-        ADD_CONST(FRAMEBUFFER_INCOMPLETE_DIMENSIONS)
-        ADD_CONST(FRAMEBUFFER_UNSUPPORTED)
+            ADD_CONST(FRAMEBUFFER_COMPLETE)
+            ADD_CONST(FRAMEBUFFER_INCOMPLETE_ATTACHMENT)
+            ADD_CONST(FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT)
+            ADD_CONST(FRAMEBUFFER_INCOMPLETE_DIMENSIONS)
+            ADD_CONST(FRAMEBUFFER_UNSUPPORTED)
 
-        ADD_CONST(FRAMEBUFFER_BINDING)
-        ADD_CONST(RENDERBUFFER_BINDING)
-        ADD_CONST(MAX_RENDERBUFFER_SIZE)
+            ADD_CONST(FRAMEBUFFER_BINDING)
+            ADD_CONST(RENDERBUFFER_BINDING)
+            ADD_CONST(MAX_RENDERBUFFER_SIZE)
 
-        ADD_CONST(INVALID_FRAMEBUFFER_OPERATION)
+            ADD_CONST(INVALID_FRAMEBUFFER_OPERATION)
 
-        /* WebGL-specific enums */
-        ADD_CONST(UNPACK_FLIP_Y_WEBGL)
-        ADD_CONST(UNPACK_PREMULTIPLY_ALPHA_WEBGL)
-        ADD_CONST(CONTEXT_LOST_WEBGL)
-        ADD_CONST(UNPACK_COLORSPACE_CONVERSION_WEBGL)
-        ADD_CONST(BROWSER_DEFAULT_WEBGL)
-        ;
-
-    global->Set(v8pp::to_v8(iso, "gl"), module_GL.new_instance());
+            /* WebGL-specific enums */
+            ADD_CONST(UNPACK_FLIP_Y_WEBGL)
+            ADD_CONST(UNPACK_PREMULTIPLY_ALPHA_WEBGL)
+            ADD_CONST(CONTEXT_LOST_WEBGL)
+            ADD_CONST(UNPACK_COLORSPACE_CONVERSION_WEBGL)
+            ADD_CONST(BROWSER_DEFAULT_WEBGL)
+            ;
+        module_init = true;
+    }
+    return module_GL.new_instance();
 }
 
 std::string mapShader(const char *src, GLenum shaderType)
@@ -1487,4 +1526,24 @@ std::string mapShader(const char *src, GLenum shaderType)
     //add version 330
     res = "#version 330 core\n" + res;
     return res;
+}
+
+bool shouldSwapBuffer()
+{
+    return GL_shouldSwapBuffer;
+}
+
+void clearSwapBufferTag()
+{
+    GL_shouldSwapBuffer = false;
+}
+
+void setSwapBufferTag()
+{
+    GL_shouldSwapBuffer = true;
+}
+
+WebGLContextAttributes * getCurrentContextAttributes()
+{
+    return &GL_context;
 }

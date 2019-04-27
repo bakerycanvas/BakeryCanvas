@@ -55,7 +55,19 @@
 
 void Bind_GL(v8::Isolate * iso);
 
+v8::Local<v8::Object> getGLmodule();
+
 std::string mapShader(const char *src, GLenum shaderType);
+
+bool shouldSwapBuffer();
+
+void clearSwapBufferTag();
+
+void setSwapBufferTag();
+
+struct WebGLContextAttributes;
+
+WebGLContextAttributes* getCurrentContextAttributes();
 
 struct WebGLContextAttributes
 {
