@@ -215,6 +215,9 @@ int main(int argc, char* argv[]) {
             tmp << file.rdbuf();
             scriptText = tmp.str();
             V8RunScript(v8_main_context, scriptText, filename, result, exception);
+            if (!exception.empty()) {
+                break;
+            }
         }
     }
 
