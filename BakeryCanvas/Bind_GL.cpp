@@ -13,6 +13,12 @@ static GLboolean glContextLost = false;
 
 static GLuint default_VAO = 0;
 
+//some webGL spercific configuration
+const GLboolean const_GL_UNPACK_FLIP_Y_WEBGL = false;
+const GLboolean const_GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL = false;
+//GL_BROWSER_DEFAULT_WEBGL for sRGB, or GL_NONE for RGB
+const GLint const_GL_UNPACK_COLORSPACE_CONVERSION_WEBGL = GL_BROWSER_DEFAULT_WEBGL;
+
 void _glSetError(GLenum error)
 {
     inner_GLError = error;
@@ -37,12 +43,6 @@ bool _glIsContextLost()
 	//suppose never lost on destop system
 	return false;
 }
-
-#if defined(DEBUG) || defined(_DEBUG)
-#define CHECK_GL {auto x=glGetError();if(x!=0)printf("%s:%d, %04X\n", __FUNCTION__,__LINE__,x);}
-#else
-#define CHECK_GL
-#endif
 
 void initDefaultVAO()
 {
@@ -126,14 +126,23 @@ v8::Local<v8::Value> _glGetParameter(GLenum pname)
 			CHECK_GL;
 			return v8::Int32::New(v8::Isolate::GetCurrent(), value);
 		}
+		//I don't know where these macros are defined in openGL, but seems it works on openGL
 	case GL_MAX_VERTEX_UNIFORM_VECTORS:
 	case GL_MAX_VARYING_VECTORS:
 	case GL_MAX_FRAGMENT_UNIFORM_VECTORS:
 	case GL_IMPLEMENTATION_COLOR_READ_FORMAT:
 	case GL_IMPLEMENTATION_COLOR_READ_TYPE:
+		{
+			GLint value;
+			glGetIntegerv(pname, &value);
+			CHECK_GL;
+			return v8::Int32::New(v8::Isolate::GetCurrent(), value);
+		}
+		return v8::Null(v8::Isolate::GetCurrent());
 	case GL_UNPACK_COLORSPACE_CONVERSION_WEBGL:
-		//TODO
-        return v8::Null(v8::Isolate::GetCurrent());
+		{
+			return v8::Int32::New(v8::Isolate::GetCurrent(), const_GL_UNPACK_COLORSPACE_CONVERSION_WEBGL);
+		}
 
 	//return uint
     case GL_STENCIL_BACK_VALUE_MASK:
@@ -163,10 +172,12 @@ v8::Local<v8::Value> _glGetParameter(GLenum pname)
 			return v8::Boolean::New(v8::Isolate::GetCurrent(), value);
 		}
     case GL_UNPACK_FLIP_Y_WEBGL:
+		{
+			return v8::Boolean::New(v8::Isolate::GetCurrent(), const_GL_UNPACK_FLIP_Y_WEBGL);
+		}
     case GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL:
 		{
-			//TODO
-			return v8::Null(v8::Isolate::GetCurrent());
+			return v8::Boolean::New(v8::Isolate::GetCurrent(), const_GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL);
 		}
 	//return float
     case GL_DEPTH_CLEAR_VALUE:

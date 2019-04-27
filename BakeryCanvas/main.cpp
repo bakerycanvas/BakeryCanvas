@@ -64,7 +64,7 @@ GLFWwindow* InitWindow(int width = 800, int height = 600, const char* title = "B
     }
     glViewport(0, 0, width, height);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-    return window;
+	return window;
 }
 
 extern GLenum _glGetError();
