@@ -20,6 +20,9 @@
 #include "jsinternals/bind.h"
 #include "queue/queue.h"
 #include "system.h"
+#ifdef BK_ENABLE_SHADER_TRANSLATOR
+#include "translator.h"
+#endif
 
 #ifdef WIN32
 #pragma comment(lib, "v8_monolith")
@@ -71,11 +74,9 @@ extern GLenum _glGetError();
 
 void mainLoop(uv_idle_t* handle) {
     if (!glfwWindowShouldClose(window)) {
-        if (shouldSwapBuffer())
-        {
-            if (getCurrentContextAttributes()->preserveDrawingBuffer)
-            {
-                //TODO:shit
+        if (shouldSwapBuffer()) {
+            if (getCurrentContextAttributes()->preserveDrawingBuffer) {
+                // TODO:shit
             }
             glfwSwapBuffers(window);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
@@ -162,6 +163,10 @@ int main(int argc, char* argv[]) {
 
     BKQueue::start();
 
+#ifdef BK_ENABLE_SHADER_TRANSLATOR
+    BKShaderTranslator::initialize();
+#endif
+
     std::string result, exception;
     std::string exceptionFilename;
 
@@ -236,6 +241,10 @@ int main(int argc, char* argv[]) {
         uv_idle_start(&mainloop_handle, mainLoop);
         BKQueue::tick();
     }
+
+#ifdef BK_ENABLE_SHADER_TRANSLATOR
+    BKShaderTranslator::finalize();
+#endif
 
     BKQueue::close();
     v8::V8::Dispose();

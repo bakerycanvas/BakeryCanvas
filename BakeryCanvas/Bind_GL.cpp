@@ -492,11 +492,16 @@ void _glShaderSource(WebGLShader &shader, const std::string &source)
 {
     CHECK_VALID(shader);
 #ifdef BK_ENABLE_SHADER_TRANSLATOR
-    const char* v = BKShaderTranslator::translate(shader.type, source).c_str();
+    std::string s;
+    bool success = BKShaderTranslator::translate(shader.type, source, s);
+    if (!success) {
+        s = mapShader(source.c_str(), shader.type);
+    }
 #else
     auto s = mapShader(source.c_str(), shader.type);
-    auto v = s.c_str();
 #endif
+    auto v = s.c_str();
+
     glShaderSource(shader.shader, 1, &v, NULL);
     CHECK_GL;
 }
