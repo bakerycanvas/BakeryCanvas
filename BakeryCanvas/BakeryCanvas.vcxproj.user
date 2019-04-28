@@ -4,4 +4,8 @@
     <LocalDebuggerCommandArguments>../test/fixtures/simple-webgl/</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Translator|x64'">
+    <LocalDebuggerCommandArguments>../test/fixtures/simple-webgl/</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
 </Project>

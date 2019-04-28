@@ -73,12 +73,28 @@ void mainLoop(uv_idle_t* handle) {
     if (!glfwWindowShouldClose(window)) {
         if (shouldSwapBuffer())
         {
+            glfwSwapBuffers(window);
             if (getCurrentContextAttributes()->preserveDrawingBuffer)
             {
                 //TODO:shit
+                int width;
+                int height;
+                glfwGetWindowSize(window, &width, &height);
+                if (width % 2 == 1)
+                    width++;
+                if (height % 2 == 1)
+                    height++;
+                glReadBuffer(GL_BACK);
+                CHECK_GL;
+                glDrawBuffer(GL_FRONT);
+                CHECK_GL;
+                glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+                CHECK_GL;
             }
-            glfwSwapBuffers(window);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+            else
+            {
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+            }
             clearSwapBufferTag();
         }
         glfwPollEvents();
