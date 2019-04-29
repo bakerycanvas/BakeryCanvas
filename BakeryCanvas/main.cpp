@@ -20,6 +20,9 @@
 #include "jsinternals/bind.h"
 #include "queue/queue.h"
 #include "system.h"
+#ifdef BK_ENABLE_SHADER_TRANSLATOR
+#include "translator.h"
+#endif
 
 #ifdef WIN32
 #pragma comment(lib, "v8_monolith")
@@ -195,6 +198,10 @@ int main(int argc, char* argv[]) {
 
     BKQueue::start();
 
+#ifdef BK_ENABLE_SHADER_TRANSLATOR
+    BKShaderTranslator::initialize();
+#endif
+
     std::string result, exception;
     std::string exceptionFilename;
 
@@ -269,6 +276,10 @@ int main(int argc, char* argv[]) {
         uv_idle_start(&mainloop_handle, mainLoop);
         BKQueue::tick();
     }
+
+#ifdef BK_ENABLE_SHADER_TRANSLATOR
+    BKShaderTranslator::finalize();
+#endif
 
     BKQueue::close();
     v8::V8::Dispose();

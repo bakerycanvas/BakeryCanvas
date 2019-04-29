@@ -12,9 +12,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <vector>
+#include <unordered_map>
 
 namespace BKShaderTranslator {
-    std::string translate(GLenum type, const std::string& str);
-    void _getResources(ShBuiltInResources* resources);
-}
+    void initialize();
+    void finalize();
+    bool translate(GLenum type, const std::string& str, std::string& output);
+}  // namespace BKShaderTranslator

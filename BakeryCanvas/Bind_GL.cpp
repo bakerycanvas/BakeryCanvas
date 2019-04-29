@@ -702,7 +702,11 @@ void _glShaderSource(WebGLShader &shader, const std::string &source)
 {
     CHECK_VALID(shader);
 #ifdef BK_ENABLE_SHADER_TRANSLATOR
-    auto s = BKShaderTranslator::translate(shader.type, source);
+    std::string s;
+    bool success = BKShaderTranslator::translate(shader.type, source, s);
+    if (!success) {
+        s = mapShader(source.c_str(), shader.type);
+    }
 #else
     auto s = mapShader(source.c_str(), shader.type);
 #endif

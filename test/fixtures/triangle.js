@@ -6,6 +6,10 @@ const vertices = [
 
 log("define vertices");
 
+// const canvas = document.querySelector('#glcanvas');
+const canvas = bakery.createCanvas();
+const gl = canvas.getContext('webgl');
+
 const verticesBuffer = gl.createBuffer();
 gl.bindBuffer(gl.ARRAY_BUFFER, verticesBuffer)
 gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
