@@ -407,6 +407,76 @@ void _glDeleteTexture(WebGLTexture &texture)
     texture.Invalidate();
 }
 
+void _glBindTexture(GLenum target, WebGLTexture* texture)
+{
+    if (!texture)
+    {
+        glBindTexture(target, 0);
+    }
+    else
+    {
+        CHECK_VALID((*texture));
+        glBindTexture(target, texture->textureID);
+    }
+    CHECK_GL;
+}
+
+//for compressed version, we don't use Pixel Storage Parameters
+void _glCompressedTexImage2D(GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLint border, const std::vector<unsigned char> &pixels)
+{
+    glCompressedTexImage2D(target, level, internalformat, width, height, border, pixels.size(), pixels.data());
+    CHECK_GL;
+}
+
+void _glCompressedTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, const std::vector<unsigned char> &pixels)
+{
+    glCompressedTexSubImage2D(target, level, xoffset, yoffset, width, height, format, pixels.size(), pixels.data());
+    CHECK_GL;
+}
+
+v8::Local<v8::Value> _getTexParameter(GLenum target, GLenum pname)
+{
+    GLint res;
+    glGetTexParameteriv(target, pname, &res);
+    auto v = glGetError();
+    if (v == GL_NO_ERROR)
+    {
+        return v8::Int32::New(v8::Isolate::GetCurrent(), res);
+    }
+    else
+    {
+        _glSetError(v);
+        return v8::Null(v8::Isolate::GetCurrent());
+    }
+}
+
+bool _glIsTexture(WebGLTexture *texture)
+{
+    if (!texture)
+        return false;
+    CHECK_VALID_RETURN((*texture), false);
+    return true;
+}
+
+void _glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, v8::Local<v8::Value> pixels)
+{
+    if (!v8pp::convert<std::vector<unsigned char>>::is_valid(v8::Isolate::GetCurrent(), pixels))
+    {
+        unsigned char *buffer = (unsigned char*)malloc(4 * width * height);
+        memset(buffer, 0, 4 * width * height);
+        glTexImage2D(target, level, internalformat, width, height, border, format, type, buffer);
+        free(buffer);
+    }
+    else
+    {
+        //here, no check for internalformat and type of pixels array
+        std::vector<unsigned char> buffer = v8pp::from_v8<std::vector<unsigned char>>(v8::Isolate::GetCurrent(), pixels);
+        //TODO: check whether the size of the buffer is enough
+        glTexImage2D(target, level, internalformat, width, height, border, format, type, buffer.data());
+    }
+    CHECK_GL;
+}
+
 v8::Local<v8::Object> _glCreateProgram()
 {
     auto program = new WebGLProgram();
@@ -456,6 +526,44 @@ void _glDeleteRenderbuffer(WebGLRenderbuffer &rbo)
     rbo.Invalidate();
 }
 
+void _glBindRenderbuffer(GLenum target, WebGLRenderbuffer* rbo)
+{
+    if (!rbo)
+    {
+        glBindRenderbuffer(target, 0);
+    }
+    else
+    {
+        CHECK_VALID((*rbo));
+        glBindRenderbuffer(target, rbo->rbo);
+    }
+    CHECK_GL;
+}
+
+v8::Local<v8::Value> _glGetRenderbufferParameter(GLenum target, GLenum pname)
+{
+    GLint res;
+    glGetRenderbufferParameteriv(target, pname, &res);
+    auto v = glGetError();
+    if (v == GL_NO_ERROR)
+    {
+        return v8::Int32::New(v8::Isolate::GetCurrent(), res);
+    }
+    else
+    {
+        _glSetError(v);
+        return v8::Null(v8::Isolate::GetCurrent());
+    }
+}
+
+bool _glIsRenderbuffer(WebGLRenderbuffer* rbo)
+{
+    if (!rbo)
+        return false;
+    CHECK_VALID_RETURN((*rbo), false);
+    return true;
+}
+
 v8::Local<v8::Object> _glCreateFramebuffer()
 {
     auto fbo = new WebGLFramebuffer();
@@ -470,6 +578,108 @@ void _glDeleteFramebuffer(WebGLFramebuffer &fbo)
     glDeleteFramebuffers(1, &fbo.fbo);
     CHECK_GL;
     fbo.Invalidate();
+}
+
+void _glBindFramebuffer(GLenum target, WebGLFramebuffer *fbo)
+{
+    if (!fbo)
+    {
+        glBindFramebuffer(target, 0);
+    }
+    else
+    {
+        CHECK_VALID((*fbo));
+        glBindFramebuffer(target, fbo->fbo);
+    }
+    CHECK_GL;
+}
+
+void _glFramebufferRenderbuffer(GLenum target, GLenum attachment, GLenum renderbuffertarget, WebGLRenderbuffer& rbo)
+{
+    CHECK_VALID(rbo);
+    glFramebufferRenderbuffer(target, attachment, renderbuffertarget, rbo.rbo);
+    CHECK_GL;
+}
+
+void _glFramebufferTexture2D(GLenum target, GLenum attachment, GLenum textarget, WebGLTexture& texture, GLint level)
+{
+    CHECK_VALID(texture);
+    glFramebufferTexture2D(target, attachment, textarget, texture.textureID, level);
+    CHECK_GL;
+}
+
+v8::Local<v8::Value> _glGetFramebufferAttachmentParameter(GLenum target, GLenum attachment, GLenum pname)
+{
+    switch (pname)
+    {
+    case GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE:
+    case GL_FRAMEBUFFER_ATTACHMENT_TEXTURE_LEVEL:
+    case GL_FRAMEBUFFER_ATTACHMENT_TEXTURE_CUBE_MAP_FACE:
+        {
+            GLint value;
+            glGetFramebufferAttachmentParameteriv(target, attachment, pname, &value);
+            auto v = glGetError();
+            if (v == GL_NO_ERROR)
+            {
+                return v8::Int32::New(v8::Isolate::GetCurrent(), value);
+            }
+            else
+            {
+                _glSetError(v);
+                return v8::Null(v8::Isolate::GetCurrent());
+            }
+        }
+    case GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME:
+        {
+            //query type first
+            GLint value;
+            glGetFramebufferAttachmentParameteriv(target, attachment, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE, &value);
+            auto v = glGetError();
+            if (v != GL_NO_ERROR)
+            {
+                _glSetError(v);
+                return v8::Null(v8::Isolate::GetCurrent());
+            }
+            GLint res;
+            glGetFramebufferAttachmentParameteriv(target, attachment, pname, &res);
+            v = glGetError();
+            if (v != GL_NO_ERROR)
+            {
+                _glSetError(v);
+                return v8::Null(v8::Isolate::GetCurrent());
+            }
+            if (value == GL_NONE)
+            {
+                return v8::Null(v8::Isolate::GetCurrent());
+            }
+            else if (value == GL_RENDERBUFFER)
+            {
+                WebGLRenderbuffer *rbo = new WebGLRenderbuffer();
+                rbo->rbo = (GLuint)res;
+                return v8pp::class_<WebGLRenderbuffer>::import_external(v8::Isolate::GetCurrent(), rbo);
+            }
+            else if (value == GL_TEXTURE)
+            {
+                WebGLTexture *tex = new WebGLTexture();
+                tex->textureID = (GLuint)res;
+                return v8pp::class_<WebGLTexture>::import_external(v8::Isolate::GetCurrent(), tex);
+            }
+            else
+            {
+                return v8::Null(v8::Isolate::GetCurrent());
+            }
+        }
+    }
+    _glSetError(GL_INVALID_ENUM);
+    return v8::Null(v8::Isolate::GetCurrent());
+}
+
+bool _glIsFramebuffer(WebGLFramebuffer *fbo)
+{
+    if (!fbo)
+        return false;
+    CHECK_VALID_RETURN((*fbo), false);
+    return true;
 }
 
 v8::Local<v8::Object> _glCreateBuffer()
@@ -501,7 +711,6 @@ void _glShaderSource(WebGLShader &shader, const std::string &source)
     auto s = mapShader(source.c_str(), shader.type);
 #endif
     auto v = s.c_str();
-
     glShaderSource(shader.shader, 1, &v, NULL);
     CHECK_GL;
 }
@@ -976,32 +1185,32 @@ v8::Local<v8::Object> getGLmodule()
             .set("getBufferParameter", _glGetBufferParameter)
             .set("isBuffer", _glIsBuffer)
             //Framebuffer objects
-            //.set("bindFramebuffer", _glBindFramebuffer)
+            .set("bindFramebuffer", _glBindFramebuffer)
             .set("checkFramebufferStatus", glCheckFramebufferStatus)
             .set("createFramebuffer", _glCreateFramebuffer)
             .set("deleteFramebuffer", _glDeleteFramebuffer)
-            //.set("framebufferRenderbuffer", _glFramebufferRenderbuffer)
-            //.set("framebufferTexture2D", _glFramebufferTexture2D)
-            //.set("getFramebufferAttachmentParameter", _glGetFramebufferAttachmentParameter)
-            //.set("isFramebuffer", _glIsFramebuffer)
+            .set("framebufferRenderbuffer", _glFramebufferRenderbuffer)
+            .set("framebufferTexture2D", _glFramebufferTexture2D)
+            .set("getFramebufferAttachmentParameter", _glGetFramebufferAttachmentParameter)
+            .set("isFramebuffer", _glIsFramebuffer)
             //Renderbuffer objects
-            //.set("bindRenderbuffer", _glBindRenderbuffer)
+            .set("bindRenderbuffer", _glBindRenderbuffer)
             .set("createRenderbuffer", _glCreateRenderbuffer)
             .set("deleteRenderbuffer", _glDeleteRenderbuffer)
-            //.set("getRenderbufferParameter", _glGetRenderbufferParameter)
-            .set("isRenderbuffer", glIsRenderbuffer)
+            .set("getRenderbufferParameter", _glGetRenderbufferParameter)
+            .set("isRenderbuffer", _glIsRenderbuffer)
             .set("renderbufferStorage", glRenderbufferStorage)
             //Texture objects
-            //.set("bindTexture", _glBindTexture)
-            //.set("compressedTexImage2D", glCompressedTexImage2D)
-            //.set("compressedTexSubImage2D", glCompressedTexSubImage2D)
+            .set("bindTexture", _glBindTexture)
+            .set("compressedTexImage2D", _glCompressedTexImage2D)
+            .set("compressedTexSubImage2D", _glCompressedTexSubImage2D)
             .set("copyTexImage2D", glCopyTexImage2D)
             .set("copyTexSubImage2D", glCopyTexSubImage2D)
             .set("createTexture", _glCreateTexture)
             .set("deleteTexture", _glDeleteTexture)
             .set("generateMipmap", glGenerateMipmap)
-            //.set("getTexParameter", _getTexParameter)
-            //.set("isTexture", _glIsTexture)
+            .set("getTexParameter", _getTexParameter)
+            .set("isTexture", _glIsTexture)
             //.set("texImage2D", _glTexImage2D)
             .set("texParameterf", glTexParameterf)
             .set("texParameteri", glTexParameteri)

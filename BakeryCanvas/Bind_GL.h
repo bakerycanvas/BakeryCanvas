@@ -48,7 +48,7 @@
 #endif
 
 #if defined(DEBUG) || defined(_DEBUG) || defined(BKE_DEBUG)
-#define CHECK_GL {auto x=glGetError();if(x!=0)printf("%s:%d, %04X\n", __FUNCTION__,__LINE__,x);}
+#define CHECK_GL {auto x=glGetError();if(x!=0){printf("%s:%d, %04X\n", __FUNCTION__,__LINE__,x);_glSetError(x);};}
 #else
 #define CHECK_GL
 #endif

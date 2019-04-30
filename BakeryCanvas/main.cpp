@@ -34,14 +34,18 @@
 #pragma comment(lib, "shlwapi")
 #endif
 
+extern void _glSetError(GLenum error);
+
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
 }
 
 GLFWwindow* window;
+std::string windowtitle;
 
 GLFWwindow* InitWindow(int width = 800, int height = 600, const char* title = "Bakery") {
     glfwInit();
+    windowtitle = title;
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 #ifdef WIN32
@@ -73,14 +77,45 @@ GLFWwindow* InitWindow(int width = 800, int height = 600, const char* title = "B
 extern GLenum _glGetError();
 
 void mainLoop(uv_idle_t* handle) {
+    static int frameCount = 0;
+    static double lastFrameTime = 0;
+    static double curFrameTime = 0;
     if (!glfwWindowShouldClose(window)) {
-        if (shouldSwapBuffer()) {
-            if (getCurrentContextAttributes()->preserveDrawingBuffer) {
-                // TODO:shit
-            }
+        if (shouldSwapBuffer())
+        {
             glfwSwapBuffers(window);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+            if (getCurrentContextAttributes()->preserveDrawingBuffer)
+            {
+                //TODO:shit
+                int width;
+                int height;
+                glfwGetWindowSize(window, &width, &height);
+                if (width % 2 == 1)
+                    width++;
+                if (height % 2 == 1)
+                    height++;
+                glReadBuffer(GL_BACK);
+                CHECK_GL;
+                glDrawBuffer(GL_FRONT);
+                CHECK_GL;
+                glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+                CHECK_GL;
+            }
+            else
+            {
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+            }
             clearSwapBufferTag();
+            curFrameTime = glfwGetTime();
+            frameCount++;
+            if (curFrameTime - lastFrameTime > 0.5)
+            {
+                double fps = frameCount / (curFrameTime - lastFrameTime);
+                std::string title = windowtitle;
+                title += " FPS:" + std::to_string(fps);
+                glfwSetWindowTitle(window, title.c_str());
+                lastFrameTime = curFrameTime;
+            }
         }
         glfwPollEvents();
     } else {

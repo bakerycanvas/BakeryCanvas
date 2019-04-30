@@ -1,3 +1,7 @@
+#if defined(max)
+#undef max
+#endif
+
 #include <GLSLANG/ShaderLang.h>
 
 // #include <angle_gl.h>
