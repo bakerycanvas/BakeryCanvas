@@ -206,7 +206,7 @@ int main(int argc, char* argv[]) {
     std::string exceptionFilename;
 
     if (filename.empty()) {
-        V8RunScript(v8_main_context, "var s=gl.createShader(gl.VERTEX_SHADER);gl.getShaderParameter(s,0)", "", result, exception);
+        V8RunScript(v8_main_context, "var canvas=bakery.createCanvas();var gl=canvas.getContext('webgl');var s=gl.createShader(gl.VERTEX_SHADER);gl.getShaderParameter(s,0)", "", result, exception);
         if (result.length() > 0) {
             printf("result:%s\n", result.c_str());
         }
