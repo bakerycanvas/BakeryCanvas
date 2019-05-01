@@ -18,7 +18,7 @@ namespace BKJSInternals {
     void initBakery();
     void createAudio();
     v8::Local<v8::Object> createCanvas();
-    void createImage();
+    v8::Local<v8::Object> createImage();
     void loadFileLocal();
     void loadFileRemote();
     void getSystemInfo();
