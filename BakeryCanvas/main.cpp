@@ -115,6 +115,7 @@ void mainLoop(uv_idle_t* handle) {
                 title += " FPS:" + std::to_string(fps);
                 glfwSetWindowTitle(window, title.c_str());
                 lastFrameTime = curFrameTime;
+                frameCount = 0;
             }
         }
         glfwPollEvents();
