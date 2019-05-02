@@ -32,20 +32,58 @@ std::vector<VertexAttribInfo> info_VertexAttrib;
 
 int getByteFromTexel(GLenum format, GLenum type)
 {
-    int compenont = 4;
+    int component = 4;
     switch (format)
     {
-
+    case GL_STENCIL_INDEX:
+    case GL_DEPTH_COMPONENT:
+    case GL_DEPTH_STENCIL:
+    case GL_RED:
+    case GL_GREEN:
+    case GL_BLUE:
+        component = 1;
+        break;
+    case GL_RGB:
+    case GL_BGR:
+        component = 3;
+    case GL_RGBA:
+    case GL_BGRA:
+        component = 4;
+    default:
+        return 0;
     }
     switch (type)
     {
     case GL_UNSIGNED_BYTE:
     case GL_BYTE:
-        return compenont;
+        return component;
+    case GL_UNSIGNED_SHORT:
+    case GL_SHORT:
+        return 2 * component;
+    case GL_UNSIGNED_INT:
+    case GL_INT:
+    case GL_HALF_FLOAT:
+    case GL_FLOAT:
+        return 4 * component;
+    case GL_UNSIGNED_BYTE_3_3_2:
+    case GL_UNSIGNED_BYTE_2_3_3_REV:
+        return 1;
     case GL_UNSIGNED_SHORT_5_6_5:
+    case GL_UNSIGNED_SHORT_5_6_5_REV:
     case GL_UNSIGNED_SHORT_4_4_4_4:
+    case GL_UNSIGNED_SHORT_4_4_4_4_REV:
     case GL_UNSIGNED_SHORT_5_5_5_1:
+    case GL_UNSIGNED_SHORT_1_5_5_5_REV:
         return 2;
+    case GL_UNSIGNED_INT_8_8_8_8:
+    case GL_UNSIGNED_INT_8_8_8_8_REV:
+    case GL_UNSIGNED_INT_10_10_10_2:
+    case GL_UNSIGNED_INT_2_10_10_10_REV:
+    case GL_UNSIGNED_INT_24_8:
+    case GL_UNSIGNED_INT_10F_11F_11F_REV:
+    case GL_UNSIGNED_INT_5_9_9_9_REV:
+    case GL_FLOAT_32_UNSIGNED_INT_24_8_REV:
+        return 4;
     }
     return 4;
 }
@@ -526,19 +564,23 @@ void _glTexImage2D(const v8::FunctionCallbackInfo<v8::Value>& args)
         GLint border = v8pp::from_v8<GLint>(iso, args[5]);
         GLenum format = v8pp::from_v8<GLenum>(iso, args[6]);
         GLenum type = v8pp::from_v8<GLenum>(iso, args[7]);
-        auto pixels = args[8];;
+        auto pixels = args[8];
         if (!v8pp::convert<std::vector<unsigned char>>::is_valid(iso, pixels))
         {
-            unsigned char *buffer = (unsigned char*)malloc(4 * width * height);
-            memset(buffer, 0, 4 * width * height);
-            glTexImage2D(target, level, internalformat, width, height, border, format, type, buffer);
-            free(buffer);
+            _glSetError(GL_INVALID_VALUE);
+            return;
         }
         else
         {
             //here, no check for internalformat and type of pixels array
             std::vector<unsigned char> buffer = v8pp::from_v8<std::vector<unsigned char>>(iso, pixels);
             //TODO: check whether the size of the buffer is enough
+            int bytes = getByteFromTexel(format, type);
+            if (buffer.size() < bytes * width * height)
+            {
+                _glSetError(GL_INVALID_OPERATION);
+                return;
+            }
             glTexImage2D(target, level, internalformat, width, height, border, format, type, buffer.data());
         }
     }
@@ -1514,9 +1556,12 @@ global->Set(v8pp::to_v8(iso, #x), class_##x.js_function_template()->GetFunction(
 
 #define ADD_CONST(name) .set_const(#name, GL_##name)
 
+extern void InitExtraGL();
+
 //directly map function to native openGL function
 void Bind_GL(v8::Isolate * iso)
 {
+    InitExtraGL();
     GLint attrcount;
     glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &attrcount);
     CHECK_GL;

@@ -246,3 +246,6 @@ struct VertexAttribInfo
 };
 
 extern std::vector<VertexAttribInfo> info_VertexAttrib;
+
+int getByteFromTexel(GLenum format, GLenum type);
+void _glSetError(GLenum error);
