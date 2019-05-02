@@ -170,6 +170,10 @@ void V8RunScript(v8::Local<v8::Context> v8_main_context, const std::string& scri
 
 int main(int argc, char* argv[]) {
     GLFWwindow* win = InitWindow();
+
+    if (win == NULL) {
+        return -1;
+    }
     // init V8, must be in main, or caused 9999+ kinds of crashes
 
     std::string filename;
