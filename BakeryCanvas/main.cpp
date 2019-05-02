@@ -70,6 +70,8 @@ GLFWwindow* InitWindow(int width = 800, int height = 600, const char* title = "B
         return NULL;
     }
     glViewport(0, 0, width, height);
+    // force vertical sync
+    glfwSwapInterval(1);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     return window;
 }
@@ -112,7 +114,7 @@ void mainLoop(uv_idle_t* handle) {
             {
                 double fps = frameCount / (curFrameTime - lastFrameTime);
                 std::string title = windowtitle;
-                title += " FPS:" + std::to_string(fps);
+                title += " FPS:" + std::to_string(fps).substr(0, (int)log10(fps) + 3);
                 glfwSetWindowTitle(window, title.c_str());
                 lastFrameTime = curFrameTime;
                 frameCount = 0;
@@ -207,7 +209,7 @@ int main(int argc, char* argv[]) {
     std::string exceptionFilename;
 
     if (filename.empty()) {
-        V8RunScript(v8_main_context, "var s=gl.createShader(gl.VERTEX_SHADER);gl.getShaderParameter(s,0)", "", result, exception);
+        V8RunScript(v8_main_context, "var canvas=bakery.createCanvas();var gl=canvas.getContext('webgl');var s=gl.createShader(gl.VERTEX_SHADER);gl.getShaderParameter(s,0)", "", result, exception);
         if (result.length() > 0) {
             printf("result:%s\n", result.c_str());
         }

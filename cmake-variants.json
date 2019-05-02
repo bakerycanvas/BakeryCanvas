@@ -1,0 +1,33 @@
+{
+  "buildType": {
+    "default": "debug",
+    "choices": {
+      "debug": {
+        "short": "Debug",
+        "buildType": "Debug"
+      },
+      "release": {
+        "short": "Release",
+        "buildType": "Release"
+      }
+    }
+  },
+  "UseTranslator": {
+    "default": "yes",
+    "description": "Use Translator to transpile shaders",
+    "choices": {
+      "yes": {
+        "short": "Enable Translator",
+        "settings": {
+          "BK_ENABLE_SHADER_TRANSLATOR": 1
+        }
+      },
+      "no": {
+        "short": "Disable Translator",
+        "settings": {
+          "BK_ENABLE_SHADER_TRANSLATOR": 0
+        }
+      }
+    }
+  }
+}

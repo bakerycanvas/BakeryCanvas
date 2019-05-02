@@ -15,7 +15,7 @@ list(REMOVE_ITEM DIR_SRCS "BakeryCanvas/translator.h")
 list(REMOVE_ITEM DIR_SRCS "BakeryCanvas/translator.cpp")
 endif()
 
-link_directories("${PROJECT_SOURCE_DIR}/BakeryCanvas/libs")
+link_directories("${PROJECT_SOURCE_DIR}/BakeryCanvas/libs" "/usr/local/lib")
 # 指定生成目标
 add_executable(BakeryCanvas ${DIR_SRCS})
 SET(EXECUTABLE_OUTPUT_PATH "${PROJECT_SOURCE_DIR}/bin") # 可执行文件输出目录
