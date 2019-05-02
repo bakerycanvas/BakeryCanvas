@@ -23,6 +23,7 @@
 #include <typeinfo>
 
 #include "v8pp/ptr_traits.hpp"
+#include "throw_ex.hpp"
 
 namespace v8pp {
 

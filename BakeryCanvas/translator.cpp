@@ -1,3 +1,5 @@
+#if BK_ENABLE_SHADER_TRANSLATOR
+
 #include "translator.h"
 
 #ifdef WIN32
@@ -65,3 +67,5 @@ namespace BKShaderTranslator {
         return ret;
     }
 }  // namespace BKShaderTranslator
+
+#endif

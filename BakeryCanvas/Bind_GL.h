@@ -233,3 +233,16 @@ public:
         return precision;
     }
 };
+
+struct VertexAttribInfo
+{
+    GLint size;
+    GLenum type;
+    GLboolean normalized;
+    GLsizei stride;
+    const GLvoid * pointer;
+
+    bool enabled;
+};
+
+extern std::vector<VertexAttribInfo> info_VertexAttrib;
