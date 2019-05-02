@@ -23,6 +23,7 @@
 #ifdef BK_ENABLE_SHADER_TRANSLATOR
 #include "translator.h"
 #endif
+#include "canvas2d.h"
 
 #ifdef WIN32
 #pragma comment(lib, "v8_monolith")
@@ -198,6 +199,7 @@ int main(int argc, char* argv[]) {
     v8::Context::Scope context_scope(v8_main_context);
     Bind_GL(isolate);
     Bind_Internals(isolate);
+    BKCanvas2D::bind();
 
     BKQueue::start();
 

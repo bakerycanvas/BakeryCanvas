@@ -1,4 +1,5 @@
 #include "bakery.h"
+#include "canvas2d.h"
 
 namespace BKJSInternals {
     class Canvas {
@@ -9,9 +10,27 @@ namespace BKJSInternals {
             if (type == "webgl") {
                 auto global = isolate->GetCurrentContext()->Global();
                 return getGLmodule();
+            } else if (type == "2d") {
+                return BKCanvas2D::getNewInstance(this->width, this->height);
             }
-            return v8pp::throw_ex(isolate, "Unsupported context type.");
+            return isolate->ThrowException(v8::Exception::Error(v8pp::to_v8(isolate, "Unsupported context type.")));
         }
+        int32_t width_getter() {
+            return this->width;
+        }
+        void width_setter(int32_t value) {
+            this->width = value;
+        }
+        int32_t height_getter() {
+            return this->height;
+        }
+        void height_setter(int32_t value) {
+            this->height = value;
+        }
+
+        private:
+        int32_t width = 800;
+        int32_t height = 600;
     };
 
     class Audio {};
@@ -39,6 +58,8 @@ namespace BKJSInternals {
             return this->onload;
         }
 
+        ~Image(){};
+
         private:
         const char* data;
         void loadImage() {
@@ -58,6 +79,8 @@ namespace BKJSInternals {
         auto isolate = v8::Isolate::GetCurrent();
         CanvasPrototype = new v8pp::class_<Canvas>(isolate);
         CanvasPrototype->set("getContext", &Canvas::getContext);
+        CanvasPrototype->set("width", v8pp::property(&Canvas::width_getter, &Canvas::width_setter));
+        CanvasPrototype->set("height", v8pp::property(&Canvas::height_getter, &Canvas::height_setter));
         ImagePrototype = new v8pp::class_<Image>(isolate);
         ImagePrototype->set("src", v8pp::property(&Image::src_getter, &Image::src_setter));
         ImagePrototype->set("onload", v8pp::property(&Image::onload_getter, &Image::onload_setter));
