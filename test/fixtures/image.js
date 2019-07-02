@@ -7,12 +7,23 @@
  * fileB
  * ```
  */
-const image = bakery.createImage();
 
-image.onload = function() {
-  log(123);
+function main() {
+  let image = bakery.createImage();
+  
+  image.onload = function() {
+    log(123);
+  }
+  image.src = "fileA";
+  image.src = "fileB";
+  
+  log(image.src)
+  
+  image = null;
 }
-image.src = "fileA";
-image.src = "fileB";
 
-log(image.src)
+for (let i = 0; i < 100000; i++) {
+  main();
+}
+
+const image2 = bakery.createImage();

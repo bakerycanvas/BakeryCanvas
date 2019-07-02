@@ -1,3 +1,5 @@
+#pragma once
+
 #include <cairo-ft.h>
 #include <cairo.h>
 #include <freetype/config/ftheader.h>
