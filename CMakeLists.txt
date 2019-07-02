@@ -10,6 +10,8 @@ aux_source_directory(BakeryCanvas DIR_SRCS)
 aux_source_directory(BakeryCanvas/jsinternals DIR_SRCS)
 aux_source_directory(BakeryCanvas/queue DIR_SRCS)
 aux_source_directory(BakeryCanvas/utils DIR_SRCS)
+aux_source_directory(BakeryCanvas/2d DIR_SRCS)
+aux_source_directory(BakeryCanvas/nan DIR_SRCS)
 
 if(NOT BK_ENABLE_SHADER_TRANSLATOR)
 list(REMOVE_ITEM DIR_SRCS "BakeryCanvas/translator.h")
@@ -18,7 +20,7 @@ endif()
 
 link_directories("${PROJECT_SOURCE_DIR}/BakeryCanvas/libs" "/usr/local/lib")
 # 指定生成目标
-add_executable(BakeryCanvas ${DIR_SRCS})
+add_executable(BakeryCanvas ${DIR_SRCS} BakeryCanvas/2d/Point.h)
 SET(EXECUTABLE_OUTPUT_PATH "${PROJECT_SOURCE_DIR}/bin") # 可执行文件输出目录
 INCLUDE_DIRECTORIES("${PROJECT_SOURCE_DIR}/BakeryCanvas/include") # 头文件包含目录
 INCLUDE_DIRECTORIES("${PROJECT_SOURCE_DIR}/BakeryCanvas") # 头文件包含目录
