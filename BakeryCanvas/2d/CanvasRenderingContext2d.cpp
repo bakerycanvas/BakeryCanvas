@@ -4,7 +4,7 @@
 
 #include <algorithm>
 #include "backend/ImageBackend.h"
-#include <cairo/cairo-pdf.h>
+//#include <cairo/cairo-pdf.h>
 #include "Canvas.h"
 #include "CanvasGradient.h"
 #include "CanvasPattern.h"
@@ -751,19 +751,19 @@ NAN_GETTER(Context2d::GetFormat) {
  * Create a new page.
  */
 
-NAN_METHOD(Context2d::AddPage) {
-    Context2d *context = Nan::ObjectWrap::Unwrap<Context2d>(info.This());
-    if (context->canvas()->backend()->getName() != "pdf") {
-        return Nan::ThrowError("only PDF canvases support .addPage()");
-    }
-    cairo_show_page(context->context());
-    int width = Nan::To<int32_t>(info[0]).FromMaybe(0);
-    int height = Nan::To<int32_t>(info[1]).FromMaybe(0);
-    if (width < 1) width = context->canvas()->getWidth();
-    if (height < 1) height = context->canvas()->getHeight();
-    cairo_pdf_surface_set_size(context->canvas()->surface(), width, height);
-    return;
-}
+//NAN_METHOD(Context2d::AddPage) {
+//    Context2d *context = Nan::ObjectWrap::Unwrap<Context2d>(info.This());
+//    if (context->canvas()->backend()->getName() != "pdf") {
+//        return Nan::ThrowError("only PDF canvases support .addPage()");
+//    }
+//    cairo_show_page(context->context());
+//    int width = Nan::To<int32_t>(info[0]).FromMaybe(0);
+//    int height = Nan::To<int32_t>(info[1]).FromMaybe(0);
+//    if (width < 1) width = context->canvas()->getWidth();
+//    if (height < 1) height = context->canvas()->getHeight();
+//    cairo_pdf_surface_set_size(context->canvas()->surface(), width, height);
+//    return;
+//}
 
 /*
  * Put image data.

@@ -6,7 +6,7 @@
 //#include "Canvas.h"
 #include "color.h"
 #include "nan/nan.h"
-//#include <pango/pangocairo.h>
+#include "pango/pangocairo.h"
 
 #define CANVAS_MAX_STATES 64
 
@@ -40,7 +40,7 @@ typedef struct {
     double shadowOffsetX;
     double shadowOffsetY;
     canvas_draw_mode_t textDrawingMode;
-//    PangoFontDescription *fontDescription;
+    PangoFontDescription *fontDescription;
     bool imageSmoothingEnabled;
 } canvas_state_t;
 
@@ -183,7 +183,7 @@ public:
     void restore();
     void setFontFromState();
     void resetState(bool init = false);
-//    inline PangoLayout *layout(){ return _layout; }
+    inline PangoLayout *layout(){ return _layout; }
 
 private:
     ~Context2d();
@@ -202,5 +202,5 @@ private:
 //    Canvas *_canvas;
     cairo_t *_context;
     cairo_path_t *_path;
-//    PangoLayout *_layout;
+    PangoLayout *_layout;
 };

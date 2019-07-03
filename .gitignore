@@ -52,3 +52,6 @@ _deps
 # Editors
 .vscode
 /build
+
+# Mac
+.DS_Store

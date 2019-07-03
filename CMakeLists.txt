@@ -11,6 +11,7 @@ aux_source_directory(BakeryCanvas/jsinternals DIR_SRCS)
 aux_source_directory(BakeryCanvas/queue DIR_SRCS)
 aux_source_directory(BakeryCanvas/utils DIR_SRCS)
 aux_source_directory(BakeryCanvas/2d DIR_SRCS)
+aux_source_directory(BakeryCanvas/2d/backend DIR_SRCS)
 aux_source_directory(BakeryCanvas/nan DIR_SRCS)
 
 if(NOT BK_ENABLE_SHADER_TRANSLATOR)
