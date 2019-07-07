@@ -17,12 +17,13 @@
 #endif
 
 #include "Bind_GL.h"
-#include "jsinternals/bind.h"
+#include "jsinternals/bakery.h"
 #include "queue/queue.h"
 #include "system.h"
 #ifdef BK_ENABLE_SHADER_TRANSLATOR
 #include "translator.h"
 #endif
+//#include "canvas2d.h"
 
 #ifdef WIN32
 #pragma comment(lib, "v8_monolith")
@@ -33,6 +34,10 @@
 #pragma comment(lib, "winmm")
 #pragma comment(lib, "shlwapi")
 #endif
+
+const char* INTERNAL_SCRIPT =
+#include "jsinternals/internals.js.txt"
+;
 
 extern void _glSetError(GLenum error);
 
@@ -197,7 +202,8 @@ int main(int argc, char* argv[]) {
     v8::Local<v8::Context> v8_main_context = v8::Context::New(isolate);
     v8::Context::Scope context_scope(v8_main_context);
     Bind_GL(isolate);
-    Bind_Internals(isolate);
+    BKJSInternals::initBakery();
+//    BKCanvas2D::bind();
 
     BKQueue::start();
 
@@ -208,12 +214,17 @@ int main(int argc, char* argv[]) {
     std::string result, exception;
     std::string exceptionFilename;
 
+    {
+        std::string result;
+        V8RunScript(v8_main_context, INTERNAL_SCRIPT, "<internals.js>", result, exception);
+    }
+
     if (filename.empty()) {
         V8RunScript(v8_main_context, "var canvas=bakery.createCanvas();var gl=canvas.getContext('webgl');var s=gl.createShader(gl.VERTEX_SHADER);gl.getShaderParameter(s,0)", "", result, exception);
         if (result.length() > 0) {
             printf("result:%s\n", result.c_str());
         }
-    } else {
+    } else if (exception.empty()) {
         // get current working directory
         std::string cwd = filename.substr(0, filename.find_last_of('/'));
         std::ifstream entryFile;

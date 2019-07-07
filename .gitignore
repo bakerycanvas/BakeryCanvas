@@ -48,7 +48,11 @@ install_manifest.txt
 compile_commands.json
 CTestTestfile.cmake
 _deps
+*.js.txt
 
 # Editors
 .vscode
 /build
+
+# Mac
+.DS_Store

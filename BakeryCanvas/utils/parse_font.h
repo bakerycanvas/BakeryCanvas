@@ -11,10 +11,17 @@
 #include "v8pp/persistent.hpp"
 #include "v8pp/throw_ex.hpp"
 #include "v8pp/utility.hpp"
+#include <unordered_map>
+#include <regex>
 
-#include "jsinternals/log.h"
-#include "jsinternals/settimeout.h"
-#include "jsinternals/requestanimationframe.h"
-#include "jsinternals/bakery.h"
+struct fontinfo{
+    const char* weight;
+    const char* style;
+    const char* stretch;
+    const char* variant;
+    float size;
+    const char* unit;
+    const char* family;
+};
 
-void Bind_Internals(v8::Isolate* iso);
+fontinfo* parseCSSFont(const char* str);

@@ -1,5 +1,7 @@
 #pragma once
 
+//#include "canvas2d.h"
+// #include "context2d.h"
 #include "v8pp/call_from_v8.hpp"
 #include "v8pp/call_v8.hpp"
 #include "v8pp/class.hpp"
@@ -15,14 +17,22 @@
 #include "../Bind_GL.h"
 
 namespace BKJSInternals {
+
+    class Audio {};
+
     void initBakery();
+
     void createAudio();
-    v8::Local<v8::Object> createCanvas();
-    v8::Local<v8::Object> createImage();
+
     void loadFileLocal();
+
     void loadFileRemote();
+
     void getSystemInfo();
+
     void writeStorageLocal();
+
     void request();
+
     void addEventListener();
 }  // namespace BKJSInternals
