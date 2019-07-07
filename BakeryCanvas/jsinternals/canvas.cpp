@@ -51,6 +51,11 @@ namespace BKJSInternals {
         isolate->ThrowException(v8::Exception::Error(v8pp::to_v8(isolate, "Unsupported context type.")));
     }
 
+    unsigned char* Canvas::getData() {
+        cairo_surface_flush(this->surface);
+        return cairo_image_surface_get_data(this->surface);
+    }
+
     void Canvas::saveToPNG(const std::string& filename) {
         cairo_surface_write_to_png(this->surface, filename.c_str());
     }

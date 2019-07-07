@@ -1,5 +1,7 @@
 #include "Bind_GL.h"
 #include "translator.h"
+#include <jsinternals/canvas.h>
+#include <jsinternals/image.h>
 
 #ifdef BK_ENABLE_SHADER_TRANSLATOR
 static const std::string variable_prefix = ANGLE_HASH_NAME_PREFIX;
@@ -554,8 +556,24 @@ void _glTexImage2D(const v8::FunctionCallbackInfo<v8::Value>& args)
     if (args.Length() == 6)
     {
         GLenum format = v8pp::from_v8<GLenum>(iso, args[3]);
+        if (format == GL_RGBA) {
+            format = GL_BGRA;
+        } else if (format == GL_RGB) {
+            format = GL_BGR;
+        } else {
+            THROW("only ARGB and RGB are supported");
+        }
         GLenum type = v8pp::from_v8<GLenum>(iso, args[4]);
-        //TODO
+        // TODO: RGBA, BGRA??
+        if (BKJSInternals::Image::ImagePrototype->class_function_template()->HasInstance(args[5])) {
+            auto image = v8pp::from_v8<BKJSInternals::Image*>(iso, args[5]);
+            glTexImage2D(target, level, internalformat, image->width, image->height, 0, format, type, image->getData());
+        } else if(BKJSInternals::Canvas::CanvasPrototype->class_function_template()->HasInstance(args[5])) {
+            auto canvas = v8pp::from_v8<BKJSInternals::Canvas*>(iso, args[5]);
+            glTexImage2D(target, level, internalformat, canvas->width, canvas->height, 0, format, type, canvas->getData());
+        } else {
+            THROW("unsupported texture source");
+        }
     }
     else
     {

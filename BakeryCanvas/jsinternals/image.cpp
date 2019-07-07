@@ -11,8 +11,6 @@ namespace BKJSInternals {
 
     Image::Image(const v8::FunctionCallbackInfo<v8::Value>& args) {
         //        this->surface = cairo_image_surface_create(this->format, this->width, this->height);
-        this->surface = cairo_image_surface_create_from_png("/Users/Icemic/Workspace/seri_icon.png");
-        this->cairoContext = cairo_create(this->surface);
     }
 
     Image::~Image() {
@@ -28,6 +26,9 @@ namespace BKJSInternals {
         ImagePrototype->class_function_template()->SetClassName(v8pp::to_v8(isolate, "Image"));
         ImagePrototype->set("src", v8pp::property(&Image::getSrc, &Image::setSrc));
         ImagePrototype->set("onload", v8pp::property(&Image::getOnload, &Image::setOnload));
+        ImagePrototype->set("width", v8pp::property(&Image::getWidth, &Image::setWidth));
+        ImagePrototype->set("height", v8pp::property(&Image::getHeight, &Image::setHeight));
+        ImagePrototype->set("complete", v8pp::property(&Image::getComplete));
         target.set("Image", *ImagePrototype);
         target.set("createImage", Image::createImage);
     }
@@ -41,6 +42,10 @@ namespace BKJSInternals {
         return this->src;
     }
 
+    bool Image::getComplete() {
+        return this->complete;
+    }
+
     void Image::setOnload(v8::Local<v8::Function> value) {
         auto isolate = v8::Isolate::GetCurrent();
         if (this->onload != nullptr) {
@@ -51,7 +56,7 @@ namespace BKJSInternals {
             // TODO: should use v8::Null(isolate)
             this->onload = nullptr;
         } else {
-            v8::Persistent<v8::Function>* func = new v8::Persistent<v8::Function>(isolate, value);
+            auto func = new v8::Persistent<v8::Function>(isolate, value);
             this->onload = func;
         }
     }
@@ -83,7 +88,17 @@ namespace BKJSInternals {
         this->height = value;
     }
 
+    unsigned char* Image::getData() {
+        return this->data;
+    }
+
     void Image::loadImage() {
+        this->surface = cairo_image_surface_create_from_png("/Users/Icemic/Workspace/seri_icon.png");
+        cairo_surface_flush(this->surface);
+        this->data = cairo_image_surface_get_data(this->surface);
+        this->width = cairo_image_surface_get_width(this->surface);
+        this->height = cairo_image_surface_get_height(this->surface);
+        this->cairoContext = cairo_create(this->surface);
         this->complete = true;
         if (this->onload != nullptr) {
             auto isolate = v8::Isolate::GetCurrent();

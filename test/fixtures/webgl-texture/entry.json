@@ -1,0 +1,6 @@
+{
+  "files": [
+    "gl-matrix.js",
+    "webgl-demo.js"
+  ]
+}

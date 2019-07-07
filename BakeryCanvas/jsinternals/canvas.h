@@ -45,6 +45,8 @@ namespace BKJSInternals {
         int32_t getHeight();
         void setHeight(int32_t value);
 
+        unsigned char* getData();
+
         private:
     };
 

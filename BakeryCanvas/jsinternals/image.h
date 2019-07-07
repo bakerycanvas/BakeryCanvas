@@ -23,6 +23,7 @@ namespace BKJSInternals {
         std::string src;
         int32_t width = 800;
         int32_t height = 600;
+        unsigned char* data = nullptr;
         v8::Persistent<v8::Function>* onload = nullptr;
 
         cairo_surface_t* surface = nullptr;
@@ -37,6 +38,8 @@ namespace BKJSInternals {
         void setSrc(std::string value);
         std::string getSrc();
 
+        bool getComplete();
+
         int32_t getWidth();
         void setWidth(int32_t value);
 
@@ -45,6 +48,8 @@ namespace BKJSInternals {
 
         void setOnload(v8::Local<v8::Function> value);
         void getOnload(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value>& info);
+
+        unsigned char* getData();
 
         ~Image();
 
