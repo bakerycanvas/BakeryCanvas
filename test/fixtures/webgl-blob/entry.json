@@ -1,0 +1,21 @@
+{
+  "files": [
+    "tdl/base.js",
+    "tdl/buffers.js",
+    "tdl/fast.js",
+    "tdl/log.js",
+    "tdl/math.js",
+    "tdl/misc.js",
+    "tdl/models.js",
+    "tdl/primitives.js",
+    "tdl/programs.js",
+    "tdl/string.js",
+    "tdl/webgl.js",
+    "webgl-debug.js",
+    "immediate_sim.js",
+    "marching_cubes.js",
+    "marching_cubes_tables.js",
+    "getShader.js",
+    "index.js"
+  ]
+}
