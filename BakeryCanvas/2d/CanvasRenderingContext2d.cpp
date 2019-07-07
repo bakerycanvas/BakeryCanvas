@@ -5,12 +5,14 @@
 #include <algorithm>
 #include "backend/ImageBackend.h"
 //#include <cairo/cairo-pdf.h>
-#include "Canvas.h"
+//#include "Canvas.h"
+#include "jsinternals/canvas.h"
+#include "jsinternals/image.h"
 #include "CanvasGradient.h"
 #include "CanvasPattern.h"
 #include <cmath>
 #include <cstdlib>
-#include "Image.h"
+//#include "Image.h"
 #include "ImageData.h"
 #include <limits>
 #include <map>
@@ -19,7 +21,17 @@
 #include "./Util.h"
 #include <vector>
 
+#include <assert.h>
+#include <cstring>
+#include <cctype>
+#include <ctime>
+#include <sstream>
+#include <stdlib.h>
+#include <unordered_set>
+
+using namespace std;
 using namespace v8;
+using namespace BKJSInternals;
 
 // Windows doesn't support the C99 names for these
 #ifdef _MSC_VER
@@ -97,6 +109,8 @@ inline static bool checkArgs(const Nan::FunctionCallbackInfo<Value> &info, doubl
 Nan::Persistent<Function> Context2d::_DOMMatrix;
 Nan::Persistent<Function> Context2d::_parseFont;
 
+std::vector<FontFace> font_face_list;
+
 /*
  * Initialize Context2d.
  */
@@ -117,7 +131,7 @@ Context2d::Initialize(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target) {
     Nan::SetPrototypeMethod(ctor, "putImageData", PutImageData);
     Nan::SetPrototypeMethod(ctor, "getImageData", GetImageData);
     Nan::SetPrototypeMethod(ctor, "createImageData", CreateImageData);
-    Nan::SetPrototypeMethod(ctor, "addPage", AddPage);
+//    Nan::SetPrototypeMethod(ctor, "addPage", AddPage);
     Nan::SetPrototypeMethod(ctor, "save", Save);
     Nan::SetPrototypeMethod(ctor, "restore", Restore);
     Nan::SetPrototypeMethod(ctor, "rotate", Rotate);
@@ -183,9 +197,11 @@ Context2d::Initialize(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target) {
  * Create a cairo context.
  */
 
-Context2d::Context2d(Canvas *canvas) {
+Context2d::Context2d(BKJSInternals::Canvas *canvas) {
     _canvas = canvas;
-    _context = canvas->createCairoContext();
+//    _context = canvas->createCairoContext();
+    _context = canvas->cairoContext;
+    cairo_set_line_width(_context, 1); // Cairo defaults to 2
     _layout = pango_cairo_create_layout(_context);
     state = states[stateno = 0] = (canvas_state_t *) malloc(sizeof(canvas_state_t));
 
@@ -679,37 +695,37 @@ NAN_METHOD(Context2d::New) {
     if (!info[0]->IsObject())
         return Nan::ThrowTypeError("Canvas expected");
     Local<Object> obj = Nan::To<Object>(info[0]).ToLocalChecked();
-    if (!Nan::New(Canvas::constructor)->HasInstance(obj))
+    if (!Canvas::CanvasPrototype->class_function_template()->HasInstance(obj))
         return Nan::ThrowTypeError("Canvas expected");
-    Canvas *canvas = Nan::ObjectWrap::Unwrap<Canvas>(obj);
+    Canvas *canvas = v8pp::from_v8<Canvas*>(info.GetIsolate(), info[0]);
 
-    bool isImageBackend = canvas->backend()->getName() == "image";
-    if (isImageBackend) {
-        cairo_format_t format = ImageBackend::DEFAULT_FORMAT;
-        if (info[1]->IsObject()) {
-            Local<Object> ctxAttributes = Nan::To<Object>(info[1]).ToLocalChecked();
+//    bool isImageBackend = canvas->backend()->getName() == "image";
+//    if (isImageBackend) {
+//        cairo_format_t format = ImageBackend::DEFAULT_FORMAT;
+//        if (info[1]->IsObject()) {
+//            Local<Object> ctxAttributes = Nan::To<Object>(info[1]).ToLocalChecked();
 
-            Local<Value> pixelFormat = Nan::Get(ctxAttributes, Nan::New("pixelFormat").ToLocalChecked()).ToLocalChecked();
-            if (pixelFormat->IsString()) {
-                Nan::Utf8String utf8PixelFormat(pixelFormat);
-                if (!strcmp(*utf8PixelFormat, "RGBA32")) format = CAIRO_FORMAT_ARGB32;
-                else if (!strcmp(*utf8PixelFormat, "RGB24")) format = CAIRO_FORMAT_RGB24;
-                else if (!strcmp(*utf8PixelFormat, "A8")) format = CAIRO_FORMAT_A8;
-                else if (!strcmp(*utf8PixelFormat, "RGB16_565")) format = CAIRO_FORMAT_RGB16_565;
-                else if (!strcmp(*utf8PixelFormat, "A1")) format = CAIRO_FORMAT_A1;
-#ifdef CAIRO_FORMAT_RGB30
-                else if (!strcmp(utf8PixelFormat, "RGB30")) format = CAIRO_FORMAT_RGB30;
-#endif
-            }
+//            Local<Value> pixelFormat = Nan::Get(ctxAttributes, Nan::New("pixelFormat").ToLocalChecked()).ToLocalChecked();
+//            if (pixelFormat->IsString()) {
+//                Nan::Utf8String utf8PixelFormat(pixelFormat);
+//                if (!strcmp(*utf8PixelFormat, "RGBA32")) format = CAIRO_FORMAT_ARGB32;
+//                else if (!strcmp(*utf8PixelFormat, "RGB24")) format = CAIRO_FORMAT_RGB24;
+//                else if (!strcmp(*utf8PixelFormat, "A8")) format = CAIRO_FORMAT_A8;
+//                else if (!strcmp(*utf8PixelFormat, "RGB16_565")) format = CAIRO_FORMAT_RGB16_565;
+//                else if (!strcmp(*utf8PixelFormat, "A1")) format = CAIRO_FORMAT_A1;
+//#ifdef CAIRO_FORMAT_RGB30
+//                else if (!strcmp(utf8PixelFormat, "RGB30")) format = CAIRO_FORMAT_RGB30;
+//#endif
+//            }
 
-            // alpha: false forces use of RGB24
-            Local<Value> alpha = Nan::Get(ctxAttributes, Nan::New("alpha").ToLocalChecked()).ToLocalChecked();
-            if (alpha->IsBoolean() && !Nan::To<bool>(alpha).FromMaybe(false)) {
-                format = CAIRO_FORMAT_RGB24;
-            }
-        }
-        static_cast<ImageBackend*>(canvas->backend())->setFormat(format);
-    }
+//            // alpha: false forces use of RGB24
+//            Local<Value> alpha = Nan::Get(ctxAttributes, Nan::New("alpha").ToLocalChecked()).ToLocalChecked();
+//            if (alpha->IsBoolean() && !Nan::To<bool>(alpha).FromMaybe(false)) {
+//                format = CAIRO_FORMAT_RGB24;
+//            }
+//        }
+//        static_cast<ImageBackend*>(canvas->backend())->setFormat(format);
+//    }
 
     Context2d *context = new Context2d(canvas);
 
@@ -732,18 +748,18 @@ NAN_METHOD(Context2d::SaveExternalModules) {
 
 NAN_GETTER(Context2d::GetFormat) {
     Context2d *context = Nan::ObjectWrap::Unwrap<Context2d>(info.This());
-    std::string pixelFormatString;
-    switch (context->canvas()->backend()->getFormat()) {
-        case CAIRO_FORMAT_ARGB32: pixelFormatString = "RGBA32"; break;
-        case CAIRO_FORMAT_RGB24: pixelFormatString = "RGB24"; break;
-        case CAIRO_FORMAT_A8: pixelFormatString = "A8"; break;
-        case CAIRO_FORMAT_A1: pixelFormatString = "A1"; break;
-        case CAIRO_FORMAT_RGB16_565: pixelFormatString = "RGB16_565"; break;
-#ifdef CAIRO_FORMAT_RGB30
-            case CAIRO_FORMAT_RGB30: pixelFormatString = "RGB30"; break;
-#endif
-        default: return info.GetReturnValue().SetNull();
-    }
+    std::string pixelFormatString = "RGBA32";
+//    switch (context->canvas()->backend()->getFormat()) {
+//        case CAIRO_FORMAT_ARGB32: pixelFormatString = "RGBA32"; break;
+//        case CAIRO_FORMAT_RGB24: pixelFormatString = "RGB24"; break;
+//        case CAIRO_FORMAT_A8: pixelFormatString = "A8"; break;
+//        case CAIRO_FORMAT_A1: pixelFormatString = "A1"; break;
+//        case CAIRO_FORMAT_RGB16_565: pixelFormatString = "RGB16_565"; break;
+//#ifdef CAIRO_FORMAT_RGB30
+//            case CAIRO_FORMAT_RGB30: pixelFormatString = "RGB30"; break;
+//#endif
+//        default: return info.GetReturnValue().SetNull();
+//    }
     info.GetReturnValue().Set(Nan::New<String>(pixelFormatString).ToLocalChecked());
 }
 
@@ -784,9 +800,9 @@ NAN_METHOD(Context2d::PutImageData) {
     ImageData *imageData = Nan::ObjectWrap::Unwrap<ImageData>(obj);
 
     uint8_t *src = imageData->data();
-    uint8_t *dst = context->canvas()->data();
+    uint8_t *dst = cairo_image_surface_get_data(context->canvas()->surface);
 
-    int dstStride = context->canvas()->stride();
+    int dstStride = cairo_image_surface_get_stride(context->canvas()->surface);
     int Bpp = dstStride / context->canvas()->getWidth();
     int srcStride = Bpp * imageData->width();
 
@@ -839,8 +855,8 @@ NAN_METHOD(Context2d::PutImageData) {
 
     if (cols <= 0 || rows <= 0) return;
 
-    switch (context->canvas()->backend()->getFormat()) {
-        case CAIRO_FORMAT_ARGB32: {
+//    switch (context->canvas()->backend()->getFormat()) {
+//        case CAIRO_FORMAT_ARGB32: {
             src += sy * srcStride + sx * 4;
             dst += dstStride * dy + 4 * dx;
             for (int y = 0; y < rows; ++y) {
@@ -877,77 +893,77 @@ NAN_METHOD(Context2d::PutImageData) {
                 dst += dstStride;
                 src += srcStride;
             }
-            break;
-        }
-        case CAIRO_FORMAT_RGB24: {
-            src += sy * srcStride + sx * 4;
-            dst += dstStride * dy + 4 * dx;
-            for (int y = 0; y < rows; ++y) {
-                uint8_t *dstRow = dst;
-                uint8_t *srcRow = src;
-                for (int x = 0; x < cols; ++x) {
-                    // rgba
-                    uint8_t r = *srcRow++;
-                    uint8_t g = *srcRow++;
-                    uint8_t b = *srcRow++;
-                    srcRow++;
+//            break;
+//        }
+//        case CAIRO_FORMAT_RGB24: {
+//            src += sy * srcStride + sx * 4;
+//            dst += dstStride * dy + 4 * dx;
+//            for (int y = 0; y < rows; ++y) {
+//                uint8_t *dstRow = dst;
+//                uint8_t *srcRow = src;
+//                for (int x = 0; x < cols; ++x) {
+//                    // rgba
+//                    uint8_t r = *srcRow++;
+//                    uint8_t g = *srcRow++;
+//                    uint8_t b = *srcRow++;
+//                    srcRow++;
 
-                    // argb
-                    *dstRow++ = b;
-                    *dstRow++ = g;
-                    *dstRow++ = r;
-                    *dstRow++ = 255;
-                }
-                dst += dstStride;
-                src += srcStride;
-            }
-            break;
-        }
-        case CAIRO_FORMAT_A8: {
-            src += sy * srcStride + sx;
-            dst += dstStride * dy + dx;
-            if (srcStride == dstStride && cols == dstStride) {
-                // fast path: strides are the same and doing a full-width put
-                memcpy(dst, src, cols * rows);
-            } else {
-                for (int y = 0; y < rows; ++y) {
-                    memcpy(dst, src, cols);
-                    dst += dstStride;
-                    src += srcStride;
-                }
-            }
-            break;
-        }
-        case CAIRO_FORMAT_A1: {
-            // TODO Should this be totally packed, or maintain a stride divisible by 4?
-            Nan::ThrowError("putImageData for CANVAS_FORMAT_A1 is not yet implemented");
-            break;
-        }
-        case CAIRO_FORMAT_RGB16_565: {
-            src += sy * srcStride + sx * 2;
-            dst += dstStride * dy + 2 * dx;
-            for (int y = 0; y < rows; ++y) {
-                memcpy(dst, src, cols * 2);
-                dst += dstStride;
-                src += srcStride;
-            }
-            break;
-        }
-#ifdef CAIRO_FORMAT_RGB30
-        case CAIRO_FORMAT_RGB30: {
-    // TODO
-    Nan::ThrowError("putImageData for CANVAS_FORMAT_RGB30 is not yet implemented");
-    break;
-  }
-#endif
-        default: {
-            Nan::ThrowError("Invalid pixel format");
-            break;
-        }
-    }
+//                    // argb
+//                    *dstRow++ = b;
+//                    *dstRow++ = g;
+//                    *dstRow++ = r;
+//                    *dstRow++ = 255;
+//                }
+//                dst += dstStride;
+//                src += srcStride;
+//            }
+//            break;
+//        }
+//        case CAIRO_FORMAT_A8: {
+//            src += sy * srcStride + sx;
+//            dst += dstStride * dy + dx;
+//            if (srcStride == dstStride && cols == dstStride) {
+//                // fast path: strides are the same and doing a full-width put
+//                memcpy(dst, src, cols * rows);
+//            } else {
+//                for (int y = 0; y < rows; ++y) {
+//                    memcpy(dst, src, cols);
+//                    dst += dstStride;
+//                    src += srcStride;
+//                }
+//            }
+//            break;
+//        }
+//        case CAIRO_FORMAT_A1: {
+//            // TODO Should this be totally packed, or maintain a stride divisible by 4?
+//            Nan::ThrowError("putImageData for CANVAS_FORMAT_A1 is not yet implemented");
+//            break;
+//        }
+//        case CAIRO_FORMAT_RGB16_565: {
+//            src += sy * srcStride + sx * 2;
+//            dst += dstStride * dy + 2 * dx;
+//            for (int y = 0; y < rows; ++y) {
+//                memcpy(dst, src, cols * 2);
+//                dst += dstStride;
+//                src += srcStride;
+//            }
+//            break;
+//        }
+//#ifdef CAIRO_FORMAT_RGB30
+//        case CAIRO_FORMAT_RGB30: {
+//    // TODO
+//    Nan::ThrowError("putImageData for CANVAS_FORMAT_RGB30 is not yet implemented");
+//    break;
+//  }
+//#endif
+//        default: {
+//            Nan::ThrowError("Invalid pixel format");
+//            break;
+//        }
+//    }
 
     cairo_surface_mark_dirty_rectangle(
-            context->canvas()->surface()
+            context->canvas()->surface
             , dx
             , dy
             , cols
@@ -1012,27 +1028,27 @@ NAN_METHOD(Context2d::GetImageData) {
         sy = 0;
     }
 
-    int srcStride = canvas->stride();
+    int srcStride = cairo_image_surface_get_stride(context->canvas()->surface);
     int bpp = srcStride / width;
     int size = sw * sh * bpp;
     int dstStride = sw * bpp;
 
-    uint8_t *src = canvas->data();
+    uint8_t *src = cairo_image_surface_get_data(context->canvas()->surface);
 
     Local<ArrayBuffer> buffer = ArrayBuffer::New(Isolate::GetCurrent(), size);
     Local<TypedArray> dataArray;
 
-    if (canvas->backend()->getFormat() == CAIRO_FORMAT_RGB16_565) {
-        dataArray = Uint16Array::New(buffer, 0, size);
-    } else {
+//    if (canvas->backend()->getFormat() == CAIRO_FORMAT_RGB16_565) {
+//        dataArray = Uint16Array::New(buffer, 0, size);
+//    } else {
         dataArray = Uint8ClampedArray::New(buffer, 0, size);
-    }
+//    }
 
     Nan::TypedArrayContents<uint8_t> typedArrayContents(dataArray);
     uint8_t* dst = *typedArrayContents;
 
-    switch (canvas->backend()->getFormat()) {
-        case CAIRO_FORMAT_ARGB32: {
+//    switch (canvas->backend()->getFormat()) {
+//        case CAIRO_FORMAT_ARGB32: {
             // Rearrange alpha (argb -> rgba), undo alpha pre-multiplication,
             // and store in big-endian format
             for (int y = 0; y < sh; ++y) {
@@ -1063,62 +1079,62 @@ NAN_METHOD(Context2d::GetImageData) {
                 }
                 dst += dstStride;
             }
-            break;
-        }
-        case CAIRO_FORMAT_RGB24: {
-            // Rearrange alpha (argb -> rgba) and store in big-endian format
-            for (int y = 0; y < sh; ++y) {
-                uint32_t *row = (uint32_t *)(src + srcStride * (y + sy));
-                for (int x = 0; x < sw; ++x) {
-                    int bx = x * 4;
-                    uint32_t *pixel = row + x + sx;
-                    uint8_t r = *pixel >> 16;
-                    uint8_t g = *pixel >> 8;
-                    uint8_t b = *pixel;
+//            break;
+//        }
+//        case CAIRO_FORMAT_RGB24: {
+//            // Rearrange alpha (argb -> rgba) and store in big-endian format
+//            for (int y = 0; y < sh; ++y) {
+//                uint32_t *row = (uint32_t *)(src + srcStride * (y + sy));
+//                for (int x = 0; x < sw; ++x) {
+//                    int bx = x * 4;
+//                    uint32_t *pixel = row + x + sx;
+//                    uint8_t r = *pixel >> 16;
+//                    uint8_t g = *pixel >> 8;
+//                    uint8_t b = *pixel;
 
-                    dst[bx + 0] = r;
-                    dst[bx + 1] = g;
-                    dst[bx + 2] = b;
-                    dst[bx + 3] = 255;
-                }
-                dst += dstStride;
-            }
-            break;
-        }
-        case CAIRO_FORMAT_A8: {
-            for (int y = 0; y < sh; ++y) {
-                uint8_t *row = (uint8_t *)(src + srcStride * (y + sy));
-                memcpy(dst, row + sx, dstStride);
-                dst += dstStride;
-            }
-            break;
-        }
-        case CAIRO_FORMAT_A1: {
-            // TODO Should this be totally packed, or maintain a stride divisible by 4?
-            Nan::ThrowError("getImageData for CANVAS_FORMAT_A1 is not yet implemented");
-            break;
-        }
-        case CAIRO_FORMAT_RGB16_565: {
-            for (int y = 0; y < sh; ++y) {
-                uint16_t *row = (uint16_t *)(src + srcStride * (y + sy));
-                memcpy(dst, row + sx, dstStride);
-                dst += dstStride;
-            }
-            break;
-        }
-#ifdef CAIRO_FORMAT_RGB30
-        case CAIRO_FORMAT_RGB30: {
-    // TODO
-    Nan::ThrowError("getImageData for CANVAS_FORMAT_RGB30 is not yet implemented");
-    break;
-  }
-#endif
-        default: {
-            // Unlikely
-            Nan::ThrowError("Invalid pixel format");
-            break;
-        }
-    }
+//                    dst[bx + 0] = r;
+//                    dst[bx + 1] = g;
+//                    dst[bx + 2] = b;
+//                    dst[bx + 3] = 255;
+//                }
+//                dst += dstStride;
+//            }
+//            break;
+//        }
+//        case CAIRO_FORMAT_A8: {
+//            for (int y = 0; y < sh; ++y) {
+//                uint8_t *row = (uint8_t *)(src + srcStride * (y + sy));
+//                memcpy(dst, row + sx, dstStride);
+//                dst += dstStride;
+//            }
+//            break;
+//        }
+//        case CAIRO_FORMAT_A1: {
+//            // TODO Should this be totally packed, or maintain a stride divisible by 4?
+//            Nan::ThrowError("getImageData for CANVAS_FORMAT_A1 is not yet implemented");
+//            break;
+//        }
+//        case CAIRO_FORMAT_RGB16_565: {
+//            for (int y = 0; y < sh; ++y) {
+//                uint16_t *row = (uint16_t *)(src + srcStride * (y + sy));
+//                memcpy(dst, row + sx, dstStride);
+//                dst += dstStride;
+//            }
+//            break;
+//        }
+//#ifdef CAIRO_FORMAT_RGB30
+//        case CAIRO_FORMAT_RGB30: {
+//    // TODO
+//    Nan::ThrowError("getImageData for CANVAS_FORMAT_RGB30 is not yet implemented");
+//    break;
+//  }
+//#endif
+//        default: {
+//            // Unlikely
+//            Nan::ThrowError("Invalid pixel format");
+//            break;
+//        }
+//    }
 
     const int argc = 3;
     Local<Int32> swHandle = Nan::New(sw);
@@ -1151,16 +1167,16 @@ NAN_METHOD(Context2d::CreateImageData){
         height = Nan::To<int32_t>(info[1]).FromMaybe(0);
     }
 
-    int stride = canvas->stride();
+    int stride = cairo_image_surface_get_stride(context->canvas()->surface);
     double Bpp = static_cast<double>(stride) / canvas->getWidth();
     int nBytes = static_cast<int>(Bpp * width * height + .5);
 
     Local<ArrayBuffer> ab = ArrayBuffer::New(iso, nBytes);
     Local<Object> arr;
 
-    if (canvas->backend()->getFormat() == CAIRO_FORMAT_RGB16_565)
-        arr = Uint16Array::New(ab, 0, nBytes / 2);
-    else
+//    if (canvas->backend()->getFormat() == CAIRO_FORMAT_RGB16_565)
+//        arr = Uint16Array::New(ab, 0, nBytes / 2);
+//    else
         arr = Uint8ClampedArray::New(ab, 0, nBytes);
 
     const int argc = 3;
@@ -1221,30 +1237,30 @@ NAN_METHOD(Context2d::DrawImage) {
     cairo_surface_t *surface;
 
     Local<Object> obj = Nan::To<Object>(info[0]).ToLocalChecked();
+    Context2d *context = Nan::ObjectWrap::Unwrap<Context2d>(info.This());
 
     // Image
-    if (Nan::New(Image::constructor)->HasInstance(obj)) {
-        Image *img = Nan::ObjectWrap::Unwrap<Image>(obj);
-        if (!img->isComplete()) {
+    if (Image::ImagePrototype->class_function_template()->HasInstance(obj)) {
+        Image *img = v8pp::from_v8<Image*>(info.GetIsolate(), obj);
+        if (!img->complete) {
             return Nan::ThrowError("Image given has not completed loading");
         }
         source_w = sw = img->width;
         source_h = sh = img->height;
-        surface = img->surface();
+        surface = img->surface;
 
         // Canvas
-    } else if (Nan::New(Canvas::constructor)->HasInstance(obj)) {
-        Canvas *canvas = Nan::ObjectWrap::Unwrap<Canvas>(obj);
+    } else if (Canvas::CanvasPrototype->class_function_template()->HasInstance(obj)) {
+        Canvas *canvas = v8pp::from_v8<Canvas*>(info.GetIsolate(), obj);;
         source_w = sw = canvas->getWidth();
         source_h = sh = canvas->getHeight();
-        surface = canvas->surface();
+        surface = context->canvas()->surface;
 
         // Invalid
     } else {
         return Nan::ThrowTypeError("Image or Canvas expected");
     }
 
-    Context2d *context = Nan::ObjectWrap::Unwrap<Context2d>(info.This());
     cairo_t *ctx = context->context();
 
     // Arguments
@@ -1296,7 +1312,7 @@ NAN_METHOD(Context2d::DrawImage) {
     double fy = dh / sh * current_scale_y; // transforms[2] is scale on X
     bool needScale = dw != sw || dh != sh;
     bool needCut = sw != source_w || sh != source_h || sx < 0 || sy < 0;
-    bool sameCanvas = surface == context->canvas()->surface();
+    bool sameCanvas = surface == context->canvas()->surface;
     bool needsExtraSurface = sameCanvas || needCut || needScale;
     cairo_surface_t *surfTemp = NULL;
     cairo_t *ctxTemp = NULL;
@@ -1837,7 +1853,7 @@ NAN_SETTER(Context2d::SetFillStyle) {
             return Nan::ThrowTypeError("Gradient or Pattern expected");
         }
     } else {
-        MaybeLocal<String> mstr = Nan::To<String>(value);
+        Nan::MaybeLocal<String> mstr = Nan::To<String>(value);
         if (mstr.IsEmpty()) return;
         Local<String> str = mstr.ToLocalChecked();
         context->_fillStyle.Reset();
@@ -1883,7 +1899,7 @@ NAN_SETTER(Context2d::SetStrokeStyle) {
             return Nan::ThrowTypeError("Gradient or Pattern expected");
         }
     } else {
-        MaybeLocal<String> mstr = Nan::To<String>(value);
+        Nan::MaybeLocal<String> mstr = Nan::To<String>(value);
         if (mstr.IsEmpty()) return;
         Local<String> str = mstr.ToLocalChecked();
         context->_strokeStyle.Reset();
@@ -2526,12 +2542,12 @@ NAN_SETTER(Context2d::SetFont) {
     PangoFontDescription *desc = pango_font_description_copy(context->state->fontDescription);
     pango_font_description_free(context->state->fontDescription);
 
-    pango_font_description_set_style(desc, Canvas::GetStyleFromCSSString(*style));
-    pango_font_description_set_weight(desc, Canvas::GetWeightFromCSSString(*weight));
+    pango_font_description_set_style(desc, GetStyleFromCSSString(*style));
+    pango_font_description_set_weight(desc, GetWeightFromCSSString(*weight));
 
     if (strlen(*family) > 0) pango_font_description_set_family(desc, *family);
 
-    PangoFontDescription *sys_desc = Canvas::ResolveFontDescription(desc);
+    PangoFontDescription *sys_desc = ResolveFontDescription(desc);
     pango_font_description_free(desc);
 
     if (size > 0) pango_font_description_set_absolute_size(sys_desc, size * PANGO_SCALE);
@@ -3047,3 +3063,114 @@ NAN_METHOD(Context2d::Ellipse) {
     }
     cairo_set_matrix(ctx, &save_matrix);
 }
+
+
+/*
+ * Get a PangoStyle from a CSS string (like "italic")
+ */
+
+PangoStyle
+Context2d::GetStyleFromCSSString(const char *style) {
+    PangoStyle s = PANGO_STYLE_NORMAL;
+
+    if (strlen(style) > 0) {
+        if (0 == strcmp("italic", style)) {
+            s = PANGO_STYLE_ITALIC;
+        } else if (0 == strcmp("oblique", style)) {
+            s = PANGO_STYLE_OBLIQUE;
+        }
+    }
+
+    return s;
+}
+
+/*
+ * Get a PangoWeight from a CSS string ("bold", "100", etc)
+ */
+
+PangoWeight
+Context2d::GetWeightFromCSSString(const char *weight) {
+    PangoWeight w = PANGO_WEIGHT_NORMAL;
+
+    if (strlen(weight) > 0) {
+        if (0 == strcmp("bold", weight)) {
+            w = PANGO_WEIGHT_BOLD;
+        } else if (0 == strcmp("100", weight)) {
+            w = PANGO_WEIGHT_THIN;
+        } else if (0 == strcmp("200", weight)) {
+            w = PANGO_WEIGHT_ULTRALIGHT;
+        } else if (0 == strcmp("300", weight)) {
+            w = PANGO_WEIGHT_LIGHT;
+        } else if (0 == strcmp("400", weight)) {
+            w = PANGO_WEIGHT_NORMAL;
+        } else if (0 == strcmp("500", weight)) {
+            w = PANGO_WEIGHT_MEDIUM;
+        } else if (0 == strcmp("600", weight)) {
+            w = PANGO_WEIGHT_SEMIBOLD;
+        } else if (0 == strcmp("700", weight)) {
+            w = PANGO_WEIGHT_BOLD;
+        } else if (0 == strcmp("800", weight)) {
+            w = PANGO_WEIGHT_ULTRABOLD;
+        } else if (0 == strcmp("900", weight)) {
+            w = PANGO_WEIGHT_HEAVY;
+        }
+    }
+
+    return w;
+}
+
+bool streq_casein(std::string& str1, std::string& str2) {
+    return str1.size() == str2.size() && std::equal(str1.begin(), str1.end(), str2.begin(), [](char& c1, char& c2) {
+               return c1 == c2 || std::toupper(c1) == std::toupper(c2);
+           });
+}
+
+/*
+ * Given a user description, return a description that will select the
+ * font either from the system or @font-face
+ */
+
+PangoFontDescription *
+Context2d::ResolveFontDescription(const PangoFontDescription *desc) {
+    // One of the user-specified families could map to multiple SFNT family names
+    // if someone registered two different fonts under the same family name.
+    // https://drafts.csswg.org/css-fonts-3/#font-style-matching
+    FontFace best;
+    istringstream families(pango_font_description_get_family(desc));
+    unordered_set<string> seen_families;
+    string resolved_families;
+    bool first = true;
+
+    for (string family; getline(families, family, ','); ) {
+        string renamed_families;
+        for (auto& ff : font_face_list) {
+            string pangofamily = string(pango_font_description_get_family(ff.user_desc));
+            if (streq_casein(family, pangofamily)) {
+                const char* sys_desc_family_name = pango_font_description_get_family(ff.sys_desc);
+                bool unseen = seen_families.find(sys_desc_family_name) == seen_families.end();
+
+                // Avoid sending duplicate SFNT font names due to a bug in Pango for macOS:
+                // https://bugzilla.gnome.org/show_bug.cgi?id=762873
+                if (unseen) {
+                    seen_families.insert(sys_desc_family_name);
+                    if (renamed_families.size()) renamed_families += ',';
+                    renamed_families += sys_desc_family_name;
+                }
+
+                if (first && (best.user_desc == nullptr || pango_font_description_better_match(desc, best.user_desc, ff.user_desc))) {
+                    best = ff;
+                }
+            }
+        }
+
+        if (resolved_families.size()) resolved_families += ',';
+        resolved_families += renamed_families.size() ? renamed_families : family;
+        first = false;
+    }
+
+    PangoFontDescription* ret = pango_font_description_copy(best.sys_desc ? best.sys_desc : desc);
+    pango_font_description_set_family(ret, resolved_families.c_str());
+
+    return ret;
+}
+

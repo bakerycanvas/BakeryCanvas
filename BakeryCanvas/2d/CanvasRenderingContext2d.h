@@ -4,6 +4,7 @@
 
 #include "cairo.h"
 //#include "Canvas.h"
+//#include "jsinternals/canvas.h"
 #include "color.h"
 #include "nan/nan.h"
 #include "pango/pangocairo.h"
@@ -11,6 +12,11 @@
 #define CANVAS_MAX_STATES 64
 
 using namespace Nan;
+// using namespace BKJSInternals;
+
+namespace BKJSInternals {
+    class Canvas;
+}
 
 typedef enum {
     TEXT_DRAW_PATHS,
@@ -60,12 +66,22 @@ typedef struct {
 
 void state_assign_fontFamily(canvas_state_t *state, const char *str);
 
+/*
+ * FontFace describes a font file in terms of one PangoFontDescription that
+ * will resolve to it and one that the user describes it as (like @font-face)
+ */
+class FontFace {
+    public:
+    PangoFontDescription *sys_desc = nullptr;
+    PangoFontDescription *user_desc = nullptr;
+};
+
 class Context2d: public Nan::ObjectWrap {
 public:
     short stateno;
     canvas_state_t *states[CANVAS_MAX_STATES];
     canvas_state_t *state;
-//    Context2d(Canvas *canvas);
+    Context2d(BKJSInternals::Canvas* canvas);
     static Nan::Persistent<v8::Function> _DOMMatrix;
     static Nan::Persistent<v8::Function> _parseFont;
     static Nan::Persistent<v8::FunctionTemplate> constructor;
@@ -85,7 +101,7 @@ public:
     static NAN_METHOD(IsPointInPath);
     static NAN_METHOD(BeginPath);
     static NAN_METHOD(ClosePath);
-    static NAN_METHOD(AddPage);
+//    static NAN_METHOD(AddPage);
     static NAN_METHOD(Clip);
     static NAN_METHOD(Fill);
     static NAN_METHOD(Stroke);
@@ -163,7 +179,7 @@ public:
     static NAN_SETTER(SetTextAlign);
     inline void setContext(cairo_t *ctx) { _context = ctx; }
     inline cairo_t *context(){ return _context; }
-//    inline Canvas *canvas(){ return _canvas; }
+    inline BKJSInternals::Canvas *canvas(){ return _canvas; }
     inline bool hasShadow();
     void inline setSourceRGBA(rgba_t color);
     void inline setSourceRGBA(cairo_t *ctx, rgba_t color);
@@ -185,6 +201,10 @@ public:
     void resetState(bool init = false);
     inline PangoLayout *layout(){ return _layout; }
 
+    static PangoWeight GetWeightFromCSSString(const char *weight);
+    static PangoStyle GetStyleFromCSSString(const char *style);
+    static PangoFontDescription *ResolveFontDescription(const PangoFontDescription *desc);
+
 private:
     ~Context2d();
     void _resetPersistentHandles();
@@ -199,8 +219,8 @@ private:
     Nan::Persistent<v8::Value> _font;
     Nan::Persistent<v8::Value> _textBaseline;
     Nan::Persistent<v8::Value> _textAlign;
-//    Canvas *_canvas;
-    cairo_t *_context;
+    BKJSInternals::Canvas* _canvas;
+    cairo_t* _context;
     cairo_path_t *_path;
     PangoLayout *_layout;
 };

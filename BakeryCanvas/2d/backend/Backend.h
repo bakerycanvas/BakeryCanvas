@@ -9,7 +9,7 @@
 #include <string>
 #include <v8.h>
 
-class Canvas;
+class Canvas1;
 
 class Backend : public Nan::ObjectWrap
 {
@@ -21,7 +21,7 @@ class Backend : public Nan::ObjectWrap
     int width;
     int height;
     cairo_surface_t* surface = nullptr;
-    Canvas* canvas = nullptr;
+    Canvas1* canvas = nullptr;
 
     Backend(std::string name, int width, int height);
     static void init(const Nan::FunctionCallbackInfo<v8::Value> &info);
@@ -30,7 +30,7 @@ class Backend : public Nan::ObjectWrap
   public:
     virtual ~Backend();
 
-    void setCanvas(Canvas* canvas);
+    void setCanvas(Canvas1* canvas);
 
     virtual cairo_surface_t* createSurface() = 0;
     virtual cairo_surface_t* recreateSurface();

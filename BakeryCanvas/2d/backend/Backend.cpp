@@ -24,7 +24,7 @@ void Backend::init(const Nan::FunctionCallbackInfo<v8::Value> &info) {
   info.GetReturnValue().Set(info.This());
 }
 
-void Backend::setCanvas(Canvas* _canvas)
+void Backend::setCanvas(Canvas1* _canvas)
 {
   this->canvas = _canvas;
 }

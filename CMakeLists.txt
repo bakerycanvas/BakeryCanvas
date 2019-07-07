@@ -9,7 +9,7 @@ project (BakeryCanvas)
 aux_source_directory(BakeryCanvas DIR_SRCS)
 aux_source_directory(BakeryCanvas/jsinternals DIR_SRCS)
 aux_source_directory(BakeryCanvas/queue DIR_SRCS)
-aux_source_directory(BakeryCanvas/utils DIR_SRCS)
+#aux_source_directory(BakeryCanvas/utils DIR_SRCS)
 aux_source_directory(BakeryCanvas/2d DIR_SRCS)
 aux_source_directory(BakeryCanvas/2d/backend DIR_SRCS)
 aux_source_directory(BakeryCanvas/nan DIR_SRCS)
@@ -21,10 +21,23 @@ endif()
 
 link_directories("${PROJECT_SOURCE_DIR}/BakeryCanvas/libs" "/usr/local/lib")
 # 指定生成目标
-add_executable(BakeryCanvas ${DIR_SRCS} BakeryCanvas/2d/Point.h)
+add_executable(BakeryCanvas ${DIR_SRCS})
 SET(EXECUTABLE_OUTPUT_PATH "${PROJECT_SOURCE_DIR}/bin") # 可执行文件输出目录
 INCLUDE_DIRECTORIES("${PROJECT_SOURCE_DIR}/BakeryCanvas/include") # 头文件包含目录
 INCLUDE_DIRECTORIES("${PROJECT_SOURCE_DIR}/BakeryCanvas") # 头文件包含目录
+
+if(APPLE)
+INCLUDE_DIRECTORIES("/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1")
+endif()
+
+function(make_includable input_file output_file)
+    file(READ ${input_file} content)
+    set(delim "for_c++_include")
+        set(content "R\"${delim}(\n${content})${delim}\"")
+        file(WRITE ${output_file} "${content}")
+endfunction(make_includable)
+
+make_includable(${PROJECT_SOURCE_DIR}/BakeryCanvas/jsinternals/internals.js ${PROJECT_SOURCE_DIR}/BakeryCanvas/jsinternals/internals.js.txt)
 
 # 编译参数
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -stdlib=libc++")
@@ -47,7 +60,7 @@ if(WIN32)
   target_link_libraries(BakeryCanvas v8_monolith glfw3dll uv)
 elseif(APPLE)
   MESSAGE("This is MacOS.")
-  target_link_libraries(BakeryCanvas v8_monolith glfw.3 uv cairo png freetype fontconfig pixman-1 c++ "-framework CoreFoundation" "-framework CoreGraphics")
+  target_link_libraries(BakeryCanvas v8_monolith glfw.3 uv cairo png freetype fontconfig pixman-1 pango-1.0 pangocairo-1.0 pangoft2-1.0 glib-2.0 gobject-2.0 c++ "-framework CoreFoundation" "-framework CoreGraphics")
 elseif(UNIX)
   MESSAGE("This is Linux.")
 endif()
