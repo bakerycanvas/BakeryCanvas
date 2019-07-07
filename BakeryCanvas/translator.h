@@ -1,3 +1,5 @@
+#if BK_ENABLE_SHADER_TRANSLATOR
+
 #if defined(max)
 #undef max
 #endif
@@ -19,3 +21,5 @@ namespace BKShaderTranslator {
     void finalize();
     bool translate(GLenum type, const std::string& str, std::string& output);
 }  // namespace BKShaderTranslator
+
+#endif

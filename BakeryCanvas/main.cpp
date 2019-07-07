@@ -51,13 +51,9 @@ std::string windowtitle;
 GLFWwindow* InitWindow(int width = 800, int height = 600, const char* title = "Bakery") {
     glfwInit();
     windowtitle = title;
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-#ifdef WIN32
-    // glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-#endif
 #ifdef __APPLE__
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
@@ -74,6 +70,8 @@ GLFWwindow* InitWindow(int width = 800, int height = 600, const char* title = "B
         printf("Failed to initialize GLAD\n");
         return NULL;
     }
+    printf("Client openGL version :%s\n", (char*)glGetString(GL_VERSION));
+    //printf("Address of glReadnPixels is %lld\n", (intptr_t)glReadnPixels);
     glViewport(0, 0, width, height);
     // force vertical sync
     glfwSwapInterval(1);
@@ -175,6 +173,10 @@ void V8RunScript(v8::Local<v8::Context> v8_main_context, const std::string& scri
 
 int main(int argc, char* argv[]) {
     GLFWwindow* win = InitWindow();
+
+    if (win == NULL) {
+        return -1;
+    }
     // init V8, must be in main, or caused 9999+ kinds of crashes
 
     std::string filename;

@@ -1,5 +1,7 @@
 #include "requestanimationframe.h"
 
+#include <GLFW/glfw3.h>
+
 namespace BKJSInternals {
   struct CallbackInfo {
     int64_t id;
@@ -58,7 +60,7 @@ namespace BKJSInternals {
       }
       v8::HandleScope scope(isolate);
       v8::Local<v8::Function> callback = v8::Local<v8::Function>::New(isolate, *(item->callbackFunc));
-      v8pp::call_v8(isolate, callback, isolate->GetCurrentContext()->Global(), (double)clock() / CLOCKS_PER_SEC * 1000);
+      v8pp::call_v8(isolate, callback, isolate->GetCurrentContext()->Global(), 1000 * glfwGetTime());
       item->callbackFunc->SetWeak();
       free(item);
     }
