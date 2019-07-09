@@ -20,6 +20,8 @@
 #include "jsinternals/bakery.h"
 #include "queue/queue.h"
 #include "system.h"
+#include "env.h"
+
 #ifdef BK_ENABLE_SHADER_TRANSLATOR
 #include "translator.h"
 #endif
@@ -229,6 +231,9 @@ int main(int argc, char* argv[]) {
     } else if (exception.empty()) {
         // get current working directory
         std::string cwd = filename.substr(0, filename.find_last_of('/'));
+
+        BKEnvironment::init(cwd);
+
         std::ifstream entryFile;
         std::string entryFileName = cwd + "/entry.json";
         entryFile.open(entryFileName);

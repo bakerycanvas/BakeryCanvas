@@ -13,6 +13,7 @@ aux_source_directory(BakeryCanvas/queue DIR_SRCS)
 aux_source_directory(BakeryCanvas/2d DIR_SRCS)
 aux_source_directory(BakeryCanvas/2d/backend DIR_SRCS)
 aux_source_directory(BakeryCanvas/nan DIR_SRCS)
+aux_source_directory(BakeryCanvas/imagedecoder DIR_SRCS)
 
 if(NOT BK_ENABLE_SHADER_TRANSLATOR)
 list(REMOVE_ITEM DIR_SRCS "BakeryCanvas/translator.h")
@@ -23,6 +24,7 @@ link_directories("${PROJECT_SOURCE_DIR}/BakeryCanvas/libs" "/usr/local/lib")
 # 指定生成目标
 add_executable(BakeryCanvas ${DIR_SRCS})
 SET(EXECUTABLE_OUTPUT_PATH "${PROJECT_SOURCE_DIR}/bin") # 可执行文件输出目录
+INCLUDE_DIRECTORIES("/usr/local/include") # 头文件包含目录
 INCLUDE_DIRECTORIES("${PROJECT_SOURCE_DIR}/BakeryCanvas/include") # 头文件包含目录
 INCLUDE_DIRECTORIES("${PROJECT_SOURCE_DIR}/BakeryCanvas") # 头文件包含目录
 
@@ -60,7 +62,7 @@ if(WIN32)
   target_link_libraries(BakeryCanvas v8_monolith glfw3dll uv)
 elseif(APPLE)
   MESSAGE("This is MacOS.")
-  target_link_libraries(BakeryCanvas v8_monolith glfw.3 uv cairo png freetype fontconfig pixman-1 pango-1.0 pangocairo-1.0 pangoft2-1.0 glib-2.0 gobject-2.0 c++ "-framework CoreFoundation" "-framework CoreGraphics")
+  target_link_libraries(BakeryCanvas v8_monolith glfw.3 uv cairo png freetype fontconfig pixman-1 pango-1.0 pangocairo-1.0 pangoft2-1.0 glib-2.0 gobject-2.0 SDL2 SDL2_image c++ "-framework CoreFoundation" "-framework CoreGraphics")
 elseif(UNIX)
   MESSAGE("This is Linux.")
 endif()

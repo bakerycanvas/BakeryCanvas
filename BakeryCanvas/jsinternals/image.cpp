@@ -1,4 +1,5 @@
 #include "image.h"
+#include "imagedecoder/imagedecoder.h"
 
 namespace BKJSInternals {
 
@@ -93,8 +94,10 @@ namespace BKJSInternals {
     }
 
     void Image::loadImage() {
-        this->surface = cairo_image_surface_create_from_png("/Users/Icemic/Workspace/seri_icon.png");
+        auto img = ImageDecoder::create(this->src.c_str());
+        this->surface = cairo_image_surface_create_for_data(img->getPixelData(), CAIRO_FORMAT_ARGB32, img->getWidth(), img->getHeight(), img->getPitch());
         cairo_surface_flush(this->surface);
+        delete img;
         this->data = cairo_image_surface_get_data(this->surface);
         this->width = cairo_image_surface_get_width(this->surface);
         this->height = cairo_image_surface_get_height(this->surface);
