@@ -10,14 +10,21 @@ namespace BKEnvironment {
             perror("cannot get cwd");
             return;
         }
-        std::string ret(cwd + buffer);
+        std::string ret(buffer);
         free(buffer);
-        _cwd = cwd;
+        _cwd = ret + "/" + cwd;
     }
     const std::string& cwd() {
         return _cwd;
     }
     std::string assets(const std::string& relativeFilename) {
         return _cwd + "/assets/" + relativeFilename;
+    }
+    bool exists(const std::string& filename) {
+        if (FILE* file = fopen(filename.c_str(), "r")) {
+            fclose(file);
+            return true;
+        }
+        return false;
     }
 }  // namespace BKEnvironment
