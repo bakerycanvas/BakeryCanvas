@@ -20,6 +20,8 @@
 #include "jsinternals/bakery.h"
 #include "queue/queue.h"
 #include "system.h"
+#include "env.h"
+
 #ifdef BK_ENABLE_SHADER_TRANSLATOR
 #include "translator.h"
 #endif
@@ -229,6 +231,9 @@ int main(int argc, char* argv[]) {
     } else if (exception.empty()) {
         // get current working directory
         std::string cwd = filename.substr(0, filename.find_last_of('/'));
+
+        BKEnvironment::init(cwd);
+
         std::ifstream entryFile;
         std::string entryFileName = cwd + "/entry.json";
         entryFile.open(entryFileName);
@@ -242,6 +247,7 @@ int main(int argc, char* argv[]) {
             v8::Local<v8::Context> tempContext;
             std::ostringstream tmp;
             tmp << entryFile.rdbuf();
+            entryFile.close();
             v8::Local<v8::String> code = v8::String::NewFromUtf8(isolate, tmp.str().c_str(), v8::NewStringType::kNormal).ToLocalChecked();
             v8::Local<v8::Value> entryValue = v8::JSON::Parse(tempContext, code).ToLocalChecked();
             v8::Local<v8::Object> entryObject = v8::Local<v8::Object>::Cast(entryValue);
@@ -273,6 +279,7 @@ int main(int argc, char* argv[]) {
 
             std::ostringstream tmp;
             tmp << file.rdbuf();
+            file.close();
             scriptText = tmp.str();
             V8RunScript(v8_main_context, scriptText, filename, result, exception);
             if (!exception.empty()) {

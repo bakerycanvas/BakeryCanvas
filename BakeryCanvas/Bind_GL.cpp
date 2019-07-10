@@ -556,13 +556,6 @@ void _glTexImage2D(const v8::FunctionCallbackInfo<v8::Value>& args)
     if (args.Length() == 6)
     {
         GLenum format = v8pp::from_v8<GLenum>(iso, args[3]);
-        if (format == GL_RGBA) {
-            format = GL_BGRA;
-        } else if (format == GL_RGB) {
-            format = GL_BGR;
-        } else {
-            THROW("only ARGB and RGB are supported");
-        }
         GLenum type = v8pp::from_v8<GLenum>(iso, args[4]);
         // TODO: RGBA, BGRA??
         if (BKJSInternals::Image::ImagePrototype->class_function_template()->HasInstance(args[5])) {

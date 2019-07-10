@@ -76,7 +76,7 @@ function main() {
 
   var then = 0;
 
-  const texture = loadTexture(gl, 'cubetexture.png');
+  const texture = loadTexture(gl, 'firefox-logo.png');
 
   // Draw the scene repeatedly
   function render(now) {
@@ -284,7 +284,7 @@ function isPowerOf2(value) {
 // Draw the scene.
 //
 function drawScene(gl, programInfo, buffers, texture, deltaTime) {
-  gl.clearColor(0.0, 0.0, 0.0, 1.0);  // Clear to black, fully opaque
+  gl.clearColor(0.0, 0.2, 0.0, 1.0);  // Clear to black, fully opaque
   gl.clearDepth(1.0);                 // Clear everything
   gl.enable(gl.DEPTH_TEST);           // Enable depth testing
   gl.depthFunc(gl.LEQUAL);            // Near things obscure far things
@@ -292,6 +292,9 @@ function drawScene(gl, programInfo, buffers, texture, deltaTime) {
   // Clear the canvas before we start drawing on it.
 
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
   // Create a perspective matrix, a special matrix that is
   // used to simulate the distortion of perspective in a camera.
