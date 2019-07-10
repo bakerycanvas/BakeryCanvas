@@ -3,12 +3,13 @@
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
+#include <string>
 
 class ImageDecoder {
     public:
-    static ImageDecoder* create(const char* filename);
+    static ImageDecoder* create(const std::string& filename);
 
-    explicit ImageDecoder(SDL_Surface* surface);
+    explicit ImageDecoder(const std::string& filename);
     ~ImageDecoder();
 
     int getWidth();
@@ -17,6 +18,7 @@ class ImageDecoder {
     unsigned char* getPixelData();
 
     private:
+    bool isValid = false;
     SDL_Surface* surface = nullptr;
 };
 
