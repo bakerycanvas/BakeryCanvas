@@ -1,6 +1,7 @@
 #if BK_ENABLE_SHADER_TRANSLATOR
 
 #include "translator.h"
+#include "logger.h"
 
 #ifdef WIN32
 #pragma comment(lib, "angle_common")
@@ -52,7 +53,7 @@ namespace BKShaderTranslator {
         } else if (type == GL_FRAGMENT_SHADER) {
             compiler = fragmentCompiler;
         } else {
-            printf("[Shader Translator] unsupported shader type.\n");
+            Logger::error("[Shader Translator] unsupported shader type.");
         }
 
         auto x = str.c_str();
@@ -61,7 +62,7 @@ namespace BKShaderTranslator {
         if (ret) {
             output = sh::GetObjectCode(compiler);
         } else {
-            printf("[Shader Translator] error occurs while compiling.\n");
+            Logger::error("[Shader Translator] error occurs while compiling.");
         }
 
         return ret;

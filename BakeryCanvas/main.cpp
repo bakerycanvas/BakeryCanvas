@@ -20,6 +20,7 @@
 #include "jsinternals/bakery.h"
 #include "queue/queue.h"
 #include "system.h"
+#include "logger.h"
 #include "env.h"
 
 #ifdef BK_ENABLE_SHADER_TRANSLATOR
@@ -63,16 +64,16 @@ GLFWwindow* InitWindow(int width = 800, int height = 600, const char* title = "B
     char* errorbuf;
     auto error = glfwGetError((const char**)&errorbuf);
     if (window == NULL) {
-        printf("Failed to create GLFW window\n");
+        Logger::fatal("Failed to create GLFW window");
         glfwTerminate();
         return NULL;
     }
     glfwMakeContextCurrent(window);
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-        printf("Failed to initialize GLAD\n");
+        Logger::fatal("Failed to initialize GLAD");
         return NULL;
     }
-    printf("Client openGL version :%s\n", (char*)glGetString(GL_VERSION));
+    Logger::info("Client OpenGL Version: {:s}", (char*)glGetString(GL_VERSION));
     //printf("Address of glReadnPixels is %lld\n", (intptr_t)glReadnPixels);
     glViewport(0, 0, width, height);
     // force vertical sync
@@ -174,6 +175,8 @@ void V8RunScript(v8::Local<v8::Context> v8_main_context, const std::string& scri
 }
 
 int main(int argc, char* argv[]) {
+    Logger::init();
+
     GLFWwindow* win = InitWindow();
 
     if (win == NULL) {
@@ -182,15 +185,15 @@ int main(int argc, char* argv[]) {
     // init V8, must be in main, or caused 9999+ kinds of crashes
 
     std::string filename;
-    printf("\n");
+
     for (int i = 1; i < argc; i++) {
-        printf("arg[%d]:%s\n", i, argv[i]);
+        Logger::debug("args[{:d}] = \"{:s}\"", i, argv[i]);
         if (i == 1) {
             filename = argv[1];
         }
     }
 
-    printf("Bakery Canvas running...\n\n");
+    Logger::info("Bakery Canvas running");
 
     v8::V8::InitializeICUDefaultLocation(argv[0]);
     v8::V8::InitializeExternalStartupData(argv[0]);
@@ -225,9 +228,9 @@ int main(int argc, char* argv[]) {
 
     if (filename.empty()) {
         V8RunScript(v8_main_context, "var canvas=bakery.createCanvas();var gl=canvas.getContext('webgl');var s=gl.createShader(gl.VERTEX_SHADER);gl.getShaderParameter(s,0)", "", result, exception);
-        if (result.length() > 0) {
-            printf("result:%s\n", result.c_str());
-        }
+//        if (result.length() > 0) {
+//            printf("result:%s\n", result.c_str());
+//        }
     } else if (exception.empty()) {
         // get current working directory
         std::string cwd = filename.substr(0, filename.find_last_of('/'));
@@ -241,7 +244,7 @@ int main(int argc, char* argv[]) {
         std::list<std::string> fileList;
 
         if (!entryFile) {
-            printf("No entry.json find at %s, try to load single file %s\n", entryFileName.c_str(), filename.c_str());
+            Logger::info("No entry.json find at {:s}, try to load single file {:s}", entryFileName.c_str(), filename.c_str());
             fileList.push_back(filename);
         } else {
             v8::Local<v8::Context> tempContext;
@@ -257,7 +260,7 @@ int main(int argc, char* argv[]) {
                 for (int i = 0; i < fileArray->Length(); i++) {
                     v8::Local<v8::String> fileValue = v8::Local<v8::String>::Cast(fileArray->Get(i));
                     std::string fileName = *v8::String::Utf8Value(isolate, fileValue);
-                    printf("%s\n", (cwd + "/" + fileName).c_str());
+                    Logger::debug("Will load file \"{:s}\"", (cwd + "/" + fileName).c_str());
                     fileList.push_back(cwd + "/" + fileName);
                 }
             }
@@ -271,9 +274,10 @@ int main(int argc, char* argv[]) {
             exceptionFilename = filename;
 
             if (!file) {
-                std::string head = "读取文件失败：";
-                BKSystem::showMessage("Bakery Canvas Exception", (head + filename).c_str(), BKSystem::MessageLevel::ERROR);
-                printf("file read error\n");
+                std::string head = "Failed to read file ";
+                auto message = head + filename;
+                Logger::fatal(message);
+                BKSystem::showMessage("Bakery Canvas Exception", message.c_str(), BKSystem::MessageLevel::ERROR);
                 return 0;
             }
 
@@ -289,10 +293,10 @@ int main(int argc, char* argv[]) {
     }
 
     if (exception.length() > 0) {
-        // avoid stucked by large stack trace
+        // avoid stuck by large stack trace
         auto safeExceptionString = exception.substr(0, 2048);
+        Logger::fatal("Uncaught exception at file {:s}\n{:s}", exceptionFilename, exception);
         BKSystem::showMessage("Bakery Canvas Exception", (exceptionFilename + "\n" + safeExceptionString).c_str(), BKSystem::MessageLevel::ERROR);
-        printf("Uncaught exception:\n%s\n\n", safeExceptionString.c_str());
     } else {
         uv_idle_t mainloop_handle;
         uv_idle_init(uv_default_loop(), &mainloop_handle);
@@ -308,6 +312,6 @@ int main(int argc, char* argv[]) {
     v8::V8::Dispose();
     v8::V8::ShutdownPlatform();
     deInitGLFW();
-    printf("Bakery Canvas terminated.\n");
+    Logger::info("Bakery Canvas terminated");
     return 0;
 }
