@@ -1,5 +1,5 @@
 var squareRotation = 0.0;
-var alert = log;
+var alert = console.log;
 main();
 
 //
@@ -43,7 +43,7 @@ function main() {
     // Initialize a shader program; this is where all the lighting
     // for the vertices and so forth is established.
     const shaderProgram = initShaderProgram(gl, vsSource, fsSource);
-    log("finish program")
+    console.log("finish program")
         // Collect all the info needed to use the shader program.
         // Look up which attributes our shader program is using
         // for aVertexPosition, aVevrtexColor and also
@@ -63,7 +63,7 @@ function main() {
     // Here's where we call the routine that builds all the
     // objects we'll be drawing.
     const buffers = initBuffers(gl);
-    log("finish buffer")
+    console.log("finish buffer")
     var then = 0;
 
     // Draw the scene repeatedly

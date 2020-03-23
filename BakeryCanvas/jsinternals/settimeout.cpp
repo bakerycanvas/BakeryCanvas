@@ -12,7 +12,7 @@ namespace BKJSInternals {
   std::unordered_map<int, uv_timer_t*> timerIdMap;
   std::unordered_map<uv_timer_t*, TimerInfo*> callbackMap;
 
-  // always incresase
+  // always increase
   int timerId = 0;
 
   int setTimeout(v8::Local<v8::Function> callback, int time = 4) {

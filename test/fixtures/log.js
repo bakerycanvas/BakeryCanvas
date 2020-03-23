@@ -8,6 +8,9 @@
  * ```
  */
 
-log('开始运行');
-setTimeout(x => log(x, "sfs", false, undefined, null, {}, [1, 2, 3]), 1000);
-log('运行结束');
+// console.log('开始运行');
+// setTimeout(x => console.log(x, "sfs", false, undefined, null, {}, [1, 2, 3]), 1000);
+// console.log('运行结束');
+console.log("%s %.2d %s {:}", "baaa", 123, function () {
+
+});

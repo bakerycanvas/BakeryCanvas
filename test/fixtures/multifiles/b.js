@@ -1,4 +1,4 @@
 /**
  * will see: 124
  */
-log(x + 1);
+console.log(x + 1);

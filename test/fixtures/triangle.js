@@ -4,7 +4,7 @@ const vertices = [
      0.0,  0.5, 0.0
 ];
 
-log("define vertices");
+console.log("define vertices");
 
 // const canvas = document.querySelector('#glcanvas');
 const canvas = bakery.createCanvas();
@@ -14,7 +14,7 @@ const verticesBuffer = gl.createBuffer();
 gl.bindBuffer(gl.ARRAY_BUFFER, verticesBuffer)
 gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
 
-log("create buffer");
+console.log("create buffer");
 
 // Vertex shader program
 const vsSource = `
@@ -50,7 +50,7 @@ void main(void) {
 const shaderProgram = initShaderProgram(vsSource, fsSource);
 const attrib_loc = 0;//gl.getAttribLocation(shaderProgram, 'aPos');
 
-log("finish program");
+console.log("finish program");
 
 var then = 0;
 
@@ -90,7 +90,7 @@ function initShaderProgram(vsSource, fsSource) {
   // If creating the shader program failed, alert
 
   if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
-    log('Unable to initialize the shader program: ' + gl.getProgramInfoLog(shaderProgram));
+    console.log('Unable to initialize the shader program: ' + gl.getProgramInfoLog(shaderProgram));
     return null;
   }
 
@@ -115,7 +115,7 @@ function loadShader(type, source) {
   // See if it compiled successfully
 
   if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-    log('An error occurred compiling the shaders: ' + gl.getShaderInfoLog(shader));
+    console.log('An error occurred compiling the shaders: ' + gl.getShaderInfoLog(shader));
     gl.deleteShader(shader);
     return null;
   }

@@ -4,8 +4,8 @@
 #include "canvas.h"
 #include "image.h"
 #include "log.h"
-#include "settimeout.h"
 #include "requestanimationframe.h"
+#include "settimeout.h"
 
 namespace BKJSInternals {
 
@@ -25,9 +25,9 @@ namespace BKJSInternals {
         // add class prototype
         Image::init(bakery);
         Canvas::init(bakery);
+        Console::init(bakery);
 
         // other functions
-        bakery.set("log", log);
         bakery.set("setTimeout", setTimeout);
         bakery.set("setInterval", setInterval);
         bakery.set("clearTimeout", clearTimeout);

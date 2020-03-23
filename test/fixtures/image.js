@@ -12,12 +12,12 @@ function main() {
   let image = bakery.createImage();
   
   image.onload = function() {
-    log(123);
+    console.log(123);
   }
   image.src = "fileA";
   image.src = "fileB";
   
-  log(image.src)
+  console.log(image.src)
   
   image = null;
 }

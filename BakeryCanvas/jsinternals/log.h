@@ -11,7 +11,11 @@
 #include "v8pp/persistent.hpp"
 #include "v8pp/throw_ex.hpp"
 #include "v8pp/utility.hpp"
+#include "logger.h"
 
 namespace BKJSInternals {
-  void log(const v8::FunctionCallbackInfo<v8::Value>& args);
+    namespace Console {
+        void init(v8pp::module target);
+        void log(const v8::FunctionCallbackInfo<v8::Value>& args);
+    }
 }

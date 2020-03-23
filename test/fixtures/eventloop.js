@@ -13,38 +13,38 @@
  * ```
  */
 
-log(1);
+console.log(1);
 
 setTimeout(() => {
-  log(2);
+  console.log(2);
   Promise.resolve().then(() => {
-    log(3)
+    console.log(3)
   });
 }, 0);
 
 new Promise((resolve, reject) => {
-  log(4)
+  console.log(4)
   resolve(5)
 }).then((data) => {
-  log(data);
+  console.log(data);
 })
 
 setTimeout(() => {
-  log(6);
+  console.log(6);
 }, 0)
 
-log(7);
+console.log(7);
 
 requestAnimationFrame(() => {
   requestAnimationFrame(() => {
-    log(9);
+    console.log(9);
   });
   let id = requestAnimationFrame(() => {
-    log(9.1);
+    console.log(9.1);
   });
-  log(8);
+  console.log(8);
   setTimeout(() => {
-    log(10);
+    console.log(10);
     cancelAnimationFrame(id);
   }, 0);
 });

@@ -2,6 +2,7 @@
 #include <glad/glad.h>
 #include "GLFW/glfw3.h"
 #include "env.h"
+#include "logger.h"
 
 ImageDecoder::ImageDecoder(const std::string& filename) {
     auto fullFilename = BKEnvironment::assets(filename);
@@ -10,7 +11,7 @@ ImageDecoder::ImageDecoder(const std::string& filename) {
         this->surface = surface;
         this->isValid = true;
     } else {
-        perror(("[ImageDecoder] Cannot open file " + fullFilename).c_str());
+        Logger::error(("[ImageDecoder] Cannot open file " + fullFilename).c_str());
     }
 }
 
