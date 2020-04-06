@@ -44,8 +44,6 @@ namespace Got {
             return false;
         }
 
-        curl_easy_setopt(conn, CURLOPT_)
-
         return true;
     }
 

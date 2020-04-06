@@ -4,6 +4,7 @@
 #include "canvas.h"
 #include "image.h"
 #include "log.h"
+#include "request.h"
 #include "requestanimationframe.h"
 #include "settimeout.h"
 
@@ -34,6 +35,7 @@ namespace BKJSInternals {
         bakery.set("clearInterval", clearInterval);
         bakery.set("requestAnimationFrame", requestAnimationFrame);
         bakery.set("cancelAnimationFrame", cancelAnimationFrame);
+        bakery.set("request", request);
 
         // export `bakery`
         global->Set(v8pp::to_v8(isolate, "bakery"), bakery.new_instance());
