@@ -4,6 +4,7 @@ option(BK_ENABLE_SHADER_TRANSLATOR "Use tranlator from Angle Project to transpil
 cmake_minimum_required (VERSION 2.8)
 # 项目信息
 project (BakeryCanvas)
+set_directory_properties(TARGET BakeryCanvas PROPERTY CXX_STANDARD 20)
 # 查找BakeryCanvas目录下的所有源文件
 # 并将名称保存到 DIR_SRCS 变量
 aux_source_directory(BakeryCanvas DIR_SRCS)

@@ -17,11 +17,12 @@
 #endif
 
 #include "Bind_GL.h"
+#include "env.h"
 #include "jsinternals/bakery.h"
+#include "logger.h"
 #include "queue/queue.h"
 #include "system.h"
-#include "logger.h"
-#include "env.h"
+#include "module.h"
 
 #ifdef BK_ENABLE_SHADER_TRANSLATOR
 #include "translator.h"
@@ -40,7 +41,7 @@
 
 const char* INTERNAL_SCRIPT =
 #include "jsinternals/internals.js.txt"
-;
+    ;
 
 extern void _glSetError(GLenum error);
 
@@ -74,7 +75,7 @@ GLFWwindow* InitWindow(int width = 800, int height = 600, const char* title = "B
         return NULL;
     }
     Logger::info("Client OpenGL Version: {:s}", (char*)glGetString(GL_VERSION));
-    //printf("Address of glReadnPixels is %lld\n", (intptr_t)glReadnPixels);
+    // printf("Address of glReadnPixels is %lld\n", (intptr_t)glReadnPixels);
     glViewport(0, 0, width, height);
     // force vertical sync
     glfwSwapInterval(1);
@@ -89,12 +90,10 @@ void mainLoop(uv_idle_t* handle) {
     static double lastFrameTime = 0;
     static double curFrameTime = 0;
     if (!glfwWindowShouldClose(window)) {
-        if (shouldSwapBuffer())
-        {
+        if (shouldSwapBuffer()) {
             glfwSwapBuffers(window);
-            if (getCurrentContextAttributes()->preserveDrawingBuffer)
-            {
-                //TODO:shit
+            if (getCurrentContextAttributes()->preserveDrawingBuffer) {
+                // TODO:shit
                 int width;
                 int height;
                 glfwGetWindowSize(window, &width, &height);
@@ -108,16 +107,13 @@ void mainLoop(uv_idle_t* handle) {
                 CHECK_GL;
                 glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
                 CHECK_GL;
-            }
-            else
-            {
+            } else {
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
             }
             clearSwapBufferTag();
             curFrameTime = glfwGetTime();
             frameCount++;
-            if (curFrameTime - lastFrameTime > 0.5)
-            {
+            if (curFrameTime - lastFrameTime > 0.5) {
                 double fps = frameCount / (curFrameTime - lastFrameTime);
                 std::string title = windowtitle;
                 title += " FPS:" + std::to_string(fps).substr(0, (int)log10(fps) + 3);
@@ -210,7 +206,7 @@ int main(int argc, char* argv[]) {
     v8::Context::Scope context_scope(v8_main_context);
     Bind_GL(isolate);
     BKJSInternals::initBakery();
-//    BKCanvas2D::bind();
+    //    BKCanvas2D::bind();
 
     BKQueue::start();
 
@@ -228,12 +224,13 @@ int main(int argc, char* argv[]) {
 
     if (filename.empty()) {
         V8RunScript(v8_main_context, "var canvas=bakery.createCanvas();var gl=canvas.getContext('webgl');var s=gl.createShader(gl.VERTEX_SHADER);gl.getShaderParameter(s,0)", "", result, exception);
-//        if (result.length() > 0) {
-//            printf("result:%s\n", result.c_str());
-//        }
+        //        if (result.length() > 0) {
+        //            printf("result:%s\n", result.c_str());
+        //        }
     } else if (exception.empty()) {
         // get current working directory
         std::string cwd = filename.substr(0, filename.find_last_of('/'));
+        Logger::debug("Current working directory: {:}", cwd);
 
         BKEnvironment::init(cwd);
 
@@ -241,12 +238,11 @@ int main(int argc, char* argv[]) {
         std::string entryFileName = cwd + "/entry.json";
         entryFile.open(entryFileName);
 
-        std::list<std::string> fileList;
-
         if (!entryFile) {
             Logger::info("No entry.json find at {:s}, try to load single file {:s}", entryFileName.c_str(), filename.c_str());
-            fileList.push_back(filename);
+            BKModule::load(v8_main_context, filename);
         } else {
+            std::list<std::string> fileList;
             v8::Local<v8::Context> tempContext;
             std::ostringstream tmp;
             tmp << entryFile.rdbuf();
@@ -264,30 +260,29 @@ int main(int argc, char* argv[]) {
                     fileList.push_back(cwd + "/" + fileName);
                 }
             }
-        }
+            for (auto it = fileList.begin(); it != fileList.end(); it++) {
+                std::string filename = *it;
+                std::string scriptText;
+                std::ifstream file;
+                file.open(filename);
+                exceptionFilename = filename;
 
-        for (auto it = fileList.begin(); it != fileList.end(); it++) {
-            std::string filename = *it;
-            std::string scriptText;
-            std::ifstream file;
-            file.open(filename);
-            exceptionFilename = filename;
+                if (!file) {
+                    std::string head = "Failed to read file ";
+                    auto message = head + filename;
+                    Logger::fatal(message);
+                    BKSystem::showMessage("Bakery Canvas Exception", message.c_str(), BKSystem::MessageLevel::ERROR);
+                    return 0;
+                }
 
-            if (!file) {
-                std::string head = "Failed to read file ";
-                auto message = head + filename;
-                Logger::fatal(message);
-                BKSystem::showMessage("Bakery Canvas Exception", message.c_str(), BKSystem::MessageLevel::ERROR);
-                return 0;
-            }
-
-            std::ostringstream tmp;
-            tmp << file.rdbuf();
-            file.close();
-            scriptText = tmp.str();
-            V8RunScript(v8_main_context, scriptText, filename, result, exception);
-            if (!exception.empty()) {
-                break;
+                std::ostringstream tmp;
+                tmp << file.rdbuf();
+                file.close();
+                scriptText = tmp.str();
+                V8RunScript(v8_main_context, scriptText, filename, result, exception);
+                if (!exception.empty()) {
+                    break;
+                }
             }
         }
     }
