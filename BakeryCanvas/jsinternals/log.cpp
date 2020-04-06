@@ -7,18 +7,20 @@
 namespace BKJSInternals {
     namespace Console {
         //        std::vector<char> formatMark = { 's', 'f', 'd', 'i' };
+
         void init(v8pp::module target) {
             auto isolate = v8::Isolate::GetCurrent();
             v8pp::module module(isolate);
             module.set("log", log);
-            module.set("info", log);
-            module.set("debug", log);
-            module.set("warn", log);
-            module.set("error", log);
+            module.set("info", info);
+            module.set("debug", debug);
+            module.set("warn", warn);
+            module.set("error", error);
 
             target.set("console", module);
         }
-        void log(const v8::FunctionCallbackInfo<v8::Value>& args) {
+
+        const std::string _print(const v8::FunctionCallbackInfo<v8::Value>& args) {
             std::string rawFormat;
             std::vector<std::string> logArgs;
             for (int i = 0; i < args.Length(); i++) {
@@ -82,7 +84,24 @@ namespace BKJSInternals {
                 }
             }
 
-            Logger::Console::info(format);
+            return format;
         };
+
+        void log(const v8::FunctionCallbackInfo<v8::Value>& args) {
+            Logger::Console::info(_print(args));
+        };
+        void info(const v8::FunctionCallbackInfo<v8::Value>& args) {
+            Logger::Console::info(_print(args));
+        };
+        void debug(const v8::FunctionCallbackInfo<v8::Value>& args) {
+            Logger::Console::debug(_print(args));
+        };
+        void warn(const v8::FunctionCallbackInfo<v8::Value>& args) {
+            Logger::Console::warn(_print(args));
+        };
+        void error(const v8::FunctionCallbackInfo<v8::Value>& args) {
+            Logger::Console::error(_print(args));
+        };
+
     }  // namespace Console
 }  // namespace BKJSInternals
