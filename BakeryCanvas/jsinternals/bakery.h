@@ -32,7 +32,5 @@ namespace BKJSInternals {
 
     void writeStorageLocal();
 
-    void request();
-
     void addEventListener();
 }  // namespace BKJSInternals
