@@ -240,7 +240,7 @@ int main(int argc, char* argv[]) {
 
         if (!entryFile) {
             Logger::info("No entry.json find at {:s}, try to load single file {:s}", entryFileName.c_str(), filename.c_str());
-            BKModule::load(v8_main_context, filename);
+            BKModule::instance()->load(v8_main_context, filename, exception);
         } else {
             std::list<std::string> fileList;
             v8::Local<v8::Context> tempContext;
